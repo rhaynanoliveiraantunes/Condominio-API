@@ -1,3 +1,5 @@
+import express from "express";
+
 export const getUserProfile = async (userId) => {
     return { id: userId, message: "Dados do perfil retornados." };
 };
