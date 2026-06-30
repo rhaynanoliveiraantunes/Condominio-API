@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-// import User from '../models/User.js';
+import User from '../models/User.js';
 
 export const registerUser = async (userData) => {
    
@@ -26,19 +26,16 @@ export const registerUser = async (userData) => {
 
 export const loginUser = async (email, password) => {
     
-    // const user = await User.findOne({ email });
-    // if (!user) throw new Error('Credenciais inválidas');
-
-    const user = { _id: '123', password: '...', ativo: false }; 
-
+    const user = await User.findOne({ email });
+    if (!user) throw new Error('Credenciais inválidas');
     
     if (!user.ativo) {
         throw new Error('Conta inativa. Aguarde a aprovação do síndico.');
     }
 
     
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) throw new Error('Credenciais inválidas');
+    const isMatch = await bcrypt.compare(password, user.password);
+     if (!isMatch) throw new Error('Credenciais inválidas');
 
   
     const token = jwt.sign(
