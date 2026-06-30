@@ -10,7 +10,9 @@ const rankingSchema = new mongoose.Schema({
         type: Number,
         default: 0
     }
-}, { timestamps: true });
+}, {
+    collection: "ranking",
+timestamps: true
+});
 
-const Ranking = mongoose.model('Ranking', rankingSchema);
-export default Ranking;
+export default mongoose.model("Ranking", LoanSchema);

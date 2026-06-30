@@ -1,20 +1,31 @@
-import express from "express";
 
-export const getUserProfile = async (userId) => {
+import User from "../models/User.js";
+import Ranking from "../models/Ranking.js";
+import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
+
+ const getUserProfile = async (userId) => {
     return { id: userId, message: "Dados do perfil retornados." };
 };
 
-export const updateUserProfile = async (userId, updateData) => {
+const updateUserProfile = async (userId, updateData) => {
     delete updateData.role;
     delete updateData.ativo;
 
     return { message: "Perfil updated com sucesso." };
 };
 
-export const listAllUsers = async () => {
+const listAllUsers = async () => {
     return [];
 };
 
-export const toggleUserStatus = async (userId, isAtivo) => {
+ const toggleUserStatus = async (userId, isAtivo) => {
     return { message: `Status do usuário atualizado para ${isAtivo}.` };
 };
+export default{
+    getUserProfile,
+    toggleUserStatus,
+    listAllUsers,
+    updateUserProfile,
+
+}

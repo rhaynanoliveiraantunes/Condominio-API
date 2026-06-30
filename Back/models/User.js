@@ -27,7 +27,9 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-}, { timestamps: true });
+}, { 
+    collection: "purchase",
+    timestamps: true
+});
 
-const User = mongoose.model('User', userSchema);
-export default User;
+export default mongoose.model("User", UserSchema);
