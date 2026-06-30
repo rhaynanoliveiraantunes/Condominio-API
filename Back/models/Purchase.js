@@ -34,7 +34,9 @@ const purchaseSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     }
-}, { timestamps: true });
+}, { 
+    collection: "purchase",
+    timestamps: true
+ });
 
-const Purchase = mongoose.model('Purchase', purchaseSchema);
-export default Purchase;
+ export default mongoose.model("Purchase", LoanSchema);

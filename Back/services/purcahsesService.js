@@ -1,6 +1,9 @@
-import expres from 'express';
+import User from "../models/User.js";
+import Ranking from "../models/Ranking.js";
+import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
 
-export const createPurchase = async (purchaseData, userId) => {
+ const createPurchase = async (purchaseData, userId) => {
     if (new Date(purchaseData.prazo) < new Date()) {
         throw new Error('O prazo não pode ser uma data no passado.');
     }
@@ -15,11 +18,11 @@ export const createPurchase = async (purchaseData, userId) => {
     return newPurchase;
 };
 
-export const listActivePurchases = async () => {
+const listActivePurchases = async () => {
     return [];
 };
 
-export const joinPurchase = async (purchaseId, userId, quantidade) => {
+ const joinPurchase = async (purchaseId, userId, quantidade) => {
     const purchase = { status: 'active', quantidadeMina: 10, quantidadeAtual: 5 }; 
 
     if (purchase.status !== 'active' && purchase.status !== 'goal_reached') {
@@ -35,7 +38,7 @@ export const joinPurchase = async (purchaseId, userId, quantidade) => {
     return { message: "Participação confirmada e pagamento realizado." };
 };
 
-export const leavePurchase = async (purchaseId, userId) => {
+const leavePurchase = async (purchaseId, userId) => {
     const purchase = { status: 'active' }; 
 
     if (purchase.status !== 'active') {
@@ -45,10 +48,19 @@ export const leavePurchase = async (purchaseId, userId) => {
     return { message: "Participação cancelada com sucesso." };
 };
 
-export const editPurchase = async (purchaseId, updateData) => {
+const editPurchase = async (purchaseId, updateData) => {
     return { message: "Compra atualizada pelo administrador." };
 };
 
-export const cancelPurchase = async (purchaseId) => {
+const cancelPurchase = async (purchaseId) => {
     return { message: "Compra cancelada pelo administrador e estornos solicitados." };
 };
+
+export default{
+    createPurchase,
+    listActivePurchases,
+    editPurchase,
+    cancelPurchase,
+    leavePurchase,
+    joinPurchase
+}

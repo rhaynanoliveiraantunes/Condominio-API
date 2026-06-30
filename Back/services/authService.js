@@ -1,8 +1,9 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import User from '../models/User.js';
+import User from "../models/User.js";
+import Ranking from "../models/Ranking.js";
+import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
 
-export const registerUser = async (userData) => {
+ const registerUser = async (userData) => {
    
     const { nome, email, password, apartamento, role } = userData;
     
@@ -24,7 +25,7 @@ export const registerUser = async (userData) => {
     return { message: "Usuário cadastrado com sucesso. Aguardando validação do administrador." };
 };
 
-export const loginUser = async (email, password) => {
+ const loginUser = async (email, password) => {
     
     const user = await User.findOne({ email });
     if (!user) throw new Error('Credenciais inválidas');
@@ -46,3 +47,7 @@ export const loginUser = async (email, password) => {
 
     return { token, user: { id: user._id, role: user.role } };
 };
+export default{
+    registerUser,
+    loginUser,
+}
