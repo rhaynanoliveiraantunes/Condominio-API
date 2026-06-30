@@ -8,16 +8,13 @@ import Participation from "../models/Participation.js";
     const { nome, email, password, apartamento, role } = userData;
     
    
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     
     const newUser = {
         nome,
         email,
         password: hashedPassword,
         apartamento,
-        role: role || 'user',
+        role: 'user',
         ativo: false 
     };
 
