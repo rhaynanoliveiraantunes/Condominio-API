@@ -8,26 +8,33 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import purchaseRoutes from './routes/purchaseRoutes.js';
 
-const app = express();
 
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
+app.get("/", (req, res) => {
+    res.json({ message: "API Condominio funcionando" });
+  });
 
-connectDB();
+
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/purchases', purchaseRoutes);
+app.use(notFound);
+app.use(errorHandler);
 
-app.get('/', (req, res) => {
-    res.status(200).json({ message: "API do CondomínioBuy a funcionar corretamente!" });
-});
+const startServer = async () => {
+  try {
+    await connectDB();
 
-app.use((req, res, next) => {
-    res.status(404).json({ error: "Rota não encontrada." });
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Servidor a correr na porta ${PORT}`);
-}); 
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+    });
+  } catch (error) {
+    console.log("Erro ao iniciar servidor:", error.message);
+  }
+};
+startServer();
