@@ -19,21 +19,21 @@ import Participation from "../models/Participation.js";
     };
 
     await User.create(newUser);
-    return { message: "Usuário cadastrado com sucesso. Aguardando validação do administrador." };
+    return { message: " User successfully registered. Awaiting administrator validation" };
 };
 
  const loginUser = async (email, password) => {
     
     const user = await User.findOne({ email });
-    if (!user) throw new Error('Credenciais inválidas');
+    if (!user) throw new Error('Invalid credentials');
     
     if (!user.ativo) {
-        throw new Error('Conta inativa. Aguarde a aprovação do síndico.');
+        throw new Error('Inactive account. Please wait for the property managers approval');
     }
 
     
     const isMatch = await bcrypt.compare(password, user.password);
-     if (!isMatch) throw new Error('Credenciais inválidas');
+     if (!isMatch) throw new Error('Invalid credentials');
 
   
     const token = jwt.sign(
