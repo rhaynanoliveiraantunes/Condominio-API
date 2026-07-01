@@ -37,7 +37,7 @@ const purchaseSchema = new mongoose.Schema({
         required: true
     }
 }, { 
-    collection: "purchase",
+    collection: "purchases",
     timestamps: true
  });
 
