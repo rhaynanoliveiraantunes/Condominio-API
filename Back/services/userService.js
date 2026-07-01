@@ -5,14 +5,14 @@ import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
  const getUserProfile = async (userId) => {
-    return { id: userId, message: "Dados do perfil retornados." };
+    return { id: userId, message: "Profile data returned" };
 };
 
 const updateUserProfile = async (userId, updateData) => {
     delete updateData.role;
     delete updateData.ativo;
 
-    return { message: "Perfil updated com sucesso." };
+    return { message: "Profile successfully updated" };
 };
 
 const listAllUsers = async () => {
@@ -20,7 +20,7 @@ const listAllUsers = async () => {
 };
 
  const toggleUserStatus = async (userId, isAtivo) => {
-    return { message: `Status do usuário atualizado para ${isAtivo}.` };
+    return { message: `User status updated to ${isAtivo}.` };
 };
 export default{
     getUserProfile,
