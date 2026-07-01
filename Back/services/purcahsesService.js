@@ -5,7 +5,7 @@ import Participation from "../models/Participation.js";
 
  const createPurchase = async (purchaseData, userId) => {
     if (new Date(purchaseData.prazo) < new Date()) {
-        throw new Error('The deadline cannot be a date in the past..');
+        throw new Error('The deadline cannot be a date in the past');
     }
 
     const newPurchase = {
@@ -26,7 +26,7 @@ const listActivePurchases = async () => {
     const purchase = { status: 'active', quantidadeMina: 10, quantidadeAtual: 5 }; 
 
     if (purchase.status !== 'active' && purchase.status !== 'goal_reached') {
-        throw new Error('This purchase no longer accepts new sign-ups..');
+        throw new Error('This purchase no longer accepts new sign-ups');
     }
 
     purchase.quantidadeAtual += quantidade;
@@ -35,25 +35,25 @@ const listActivePurchases = async () => {
         purchase.status = 'goal_reached';
     }
 
-    return { message: "Participation confirmed and payment made." };
+    return { message: "Participation confirmed and payment made" };
 };
 
 const leavePurchase = async (purchaseId, userId) => {
     const purchase = { status: 'active' }; 
 
     if (purchase.status !== 'active') {
-        throw new Error('Participation cannot be cancelled once the goal has been reached or the purchase has closed..');
+        throw new Error('Participation cannot be cancelled once the goal has been reached or the purchase has closed');
     }
 
-    return { message: "Participation successfully cancelled." };
+    return { message: "Participation successfully cancelled" };
 };
 
 const editPurchase = async (purchaseId, updateData) => {
-    return { message: "Purchase updated by the administrator." };
+    return { message: "Purchase updated by the administrator" };
 };
 
 const cancelPurchase = async (purchaseId) => {
-    return { message: "Purchase cancelled by the administrator and refunds requested.." };
+    return { message: "Purchase cancelled by the administrator and refunds requested" };
 };
 
 export default{

@@ -19,7 +19,7 @@ import Participation from "../models/Participation.js";
     };
 
     await User.create(newUser);
-    return { message: " User successfully registered. Awaiting administrator validation" };
+    return { message: " User successfully registered Awaiting administrator validation" };
 };
 
  const loginUser = async (email, password) => {
@@ -28,7 +28,7 @@ import Participation from "../models/Participation.js";
     if (!user) throw new Error('Invalid credentials');
     
     if (!user.ativo) {
-        throw new Error('Inactive account. Please wait for the property managers approval');
+        throw new Error('Inactive account Please wait for the property managers approval');
     }
 
     
