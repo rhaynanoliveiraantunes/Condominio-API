@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 
+
+
 const purchaseSchema = new mongoose.Schema({
     produto: {
         type: String,
@@ -34,7 +36,9 @@ const purchaseSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     }
-}, { timestamps: true });
+}, { 
+    collection: "purchases",
+    timestamps: true
+ });
 
-const Purchase = mongoose.model('Purchase', purchaseSchema);
-export default Purchase;
+ export default mongoose.model("Purchase", LoanSchema);

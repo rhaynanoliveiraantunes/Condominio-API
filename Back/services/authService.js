@@ -1,44 +1,39 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-// import User from '../models/User.js';
+import User from "../models/User.js";
+import Ranking from "../models/Ranking.js";
+import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
 
-export const registerUser = async (userData) => {
+ const registerUser = async (userData) => {
    
     const { nome, email, password, apartamento, role } = userData;
     
    
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     
     const newUser = {
         nome,
         email,
         password: hashedPassword,
         apartamento,
-        role: role || 'user',
+        role: 'user',
         ativo: false 
     };
 
     await User.create(newUser);
-    return { message: "Usuário cadastrado com sucesso. Aguardando validação do administrador." };
+    return { message: " User successfully registered Awaiting administrator validation" };
 };
 
-export const loginUser = async (email, password) => {
+ const loginUser = async (email, password) => {
     
-    // const user = await User.findOne({ email });
-    // if (!user) throw new Error('Credenciais inválidas');
-
-    const user = { _id: '123', password: '...', ativo: false }; 
-
+    const user = await User.findOne({ email });
+    if (!user) throw new Error('Invalid credentials');
     
     if (!user.ativo) {
-        throw new Error('Conta inativa. Aguarde a aprovação do síndico.');
+        throw new Error('Inactive account Please wait for the property managers approval');
     }
 
     
-    // const isMatch = await bcrypt.compare(password, user.password);
-    // if (!isMatch) throw new Error('Credenciais inválidas');
+    const isMatch = await bcrypt.compare(password, user.password);
+     if (!isMatch) throw new Error('Invalid credentials');
 
   
     const token = jwt.sign(
@@ -49,3 +44,7 @@ export const loginUser = async (email, password) => {
 
     return { token, user: { id: user._id, role: user.role } };
 };
+export default{
+    registerUser,
+    loginUser,
+}

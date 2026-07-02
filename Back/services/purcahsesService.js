@@ -1,8 +1,11 @@
-import Purchase from '../models/Purchase.js';
+import User from "../models/User.js";
+import Ranking from "../models/Ranking.js";
+import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
 
-export const createPurchase = async (purchaseData, userId) => {
+ const createPurchase = async (purchaseData, userId) => {
     if (new Date(purchaseData.prazo) < new Date()) {
-        throw new Error('O prazo não pode ser uma data no passado.');
+        throw new Error('The deadline cannot be a date in the past');
     }
 
     const newPurchase = await Purchase.create({
@@ -15,19 +18,15 @@ export const createPurchase = async (purchaseData, userId) => {
     return newPurchase;
 };
 
-export const listActivePurchases = async () => {
-    return await Purchase.find({ status: 'active' });
+const listActivePurchases = async () => {
+    return [];
 };
 
-export const joinPurchase = async (purchaseId, userId, quantidade) => {
-    const purchase = await Purchase.findById(purchaseId);
-
-    if (!purchase) {
-        throw new Error('Compra não encontrada.');
-    }
+ const joinPurchase = async (purchaseId, userId, quantidade) => {
+    const purchase = { status: 'active', quantidadeMina: 10, quantidadeAtual: 5 }; 
 
     if (purchase.status !== 'active' && purchase.status !== 'goal_reached') {
-        throw new Error('Esta compra já não aceita novas adesões.');
+        throw new Error('This purchase no longer accepts new sign-ups');
     }
 
     purchase.quantidadeAtual += quantidade;
@@ -36,31 +35,32 @@ export const joinPurchase = async (purchaseId, userId, quantidade) => {
         purchase.status = 'goal_reached';
     }
 
-    await purchase.save();
-
-    return { message: "Participação confirmada e pagamento realizado." };
+    return { message: "Participation confirmed and payment made" };
 };
 
-export const leavePurchase = async (purchaseId, userId) => {
-    const purchase = await Purchase.findById(purchaseId);
-
-    if (!purchase) {
-        throw new Error('Compra não encontrada.');
-    }
+const leavePurchase = async (purchaseId, userId) => {
+    const purchase = { status: 'active' }; 
 
     if (purchase.status !== 'active') {
-        throw new Error('Não é possível cancelar a participação após a meta ser atingida ou a compra encerrada.');
+        throw new Error('Participation cannot be cancelled once the goal has been reached or the purchase has closed');
     }
 
-    return { message: "Participação cancelada com sucesso." };
+    return { message: "Participation successfully cancelled" };
 };
 
-export const editPurchase = async (purchaseId, updateData) => {
-    const purchase = await Purchase.findByIdAndUpdate(purchaseId, updateData, { new: true });
-    return { message: "Compra atualizada pelo administrador.", purchase };
+const editPurchase = async (purchaseId, updateData) => {
+    return { message: "Purchase updated by the administrator" };
 };
 
-export const cancelPurchase = async (purchaseId) => {
-    const purchase = await Purchase.findByIdAndUpdate(purchaseId, { status: 'cancelled' }, { new: true });
-    return { message: "Compra cancelada pelo administrador e estornos solicitados.", purchase };
+const cancelPurchase = async (purchaseId) => {
+    return { message: "Purchase cancelled by the administrator and refunds requested" };
 };
+
+export default{
+    createPurchase,
+    listActivePurchases,
+    editPurchase,
+    cancelPurchase,
+    leavePurchase,
+    joinPurchase
+}

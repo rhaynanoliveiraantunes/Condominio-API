@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 
-const participationSchema = new mongoose.Schema({
+
+
+const participationSchema = new mongoose.Schema(
+    {
     purchaseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Purchase',
@@ -19,9 +22,11 @@ const participationSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
-}, { timestamps: true });
+}, { 
+    
+    collection: "participation",
+    timestamps: true 
+    
+});
 
-participationSchema.index({ purchaseId: 1, userId: 1 }, { unique: true });
-
-const Participation = mongoose.model('Participation', participationSchema);
-export default Participation;
+export default mongoose.model("Participation", LoanSchema);
