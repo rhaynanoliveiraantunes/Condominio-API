@@ -8,11 +8,11 @@ const purchaseSchema = new mongoose.Schema({
     descricao: {
         type: String
     },
-    precoUnitario: {
+    valorUnitario: {
         type: Number,
         required: true
     },
-    quantidadeMina: {
+    quantidadeMinima: {
         type: Number,
         required: true
     },

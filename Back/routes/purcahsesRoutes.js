@@ -1,19 +1,19 @@
 import express from "express";
-import purcahsesController from "../controllers/purcahsesController.js";
+import purchasesController from "../controllers/purchasesController.js"; 
 import adminMiddleware from "../middlewares/adminMiddleware.js";
 import adminController from "../controllers/adminController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.get('/',authMiddleware, purcahsesController.getMe);
-router.post('/',authMiddleware, purcahsesController.getPost);
-router.get('/:id',authMiddleware, purcahsesController, adminMiddleware ,adminController.getId);
-router.put('/:id', authMiddleware, purcahsesController, adminMiddleware ,adminController.putId);
-router.patch('/:id/cancel',authMiddleware, purcahsesController, adminController.cancelPur);
-router.post('/:id/join', authMiddleware, purcahsesController.joinPur );
-router.delete('/:id/join', authMiddleware, purcahsesController.deleteJoin);
-router.get('/ranking', authMiddleware, purcahsesController.rankJoin);
+router.get('/', authMiddleware, purchasesController.getPurchase);
+router.post('/', authMiddleware, purchasesController.create);
+router.post('/:id/join', authMiddleware, purchasesController.joinPur);
+router.delete('/:id/join', authMiddleware, purchasesController.deleteJoin);
+router.get('/ranking', authMiddleware, purchasesController.rankJoin);
 
+router.get('/:id', authMiddleware, adminMiddleware, adminController.getId);
+router.put('/:id', authMiddleware, adminMiddleware, adminController.putId);
+router.patch('/:id/cancel', authMiddleware, adminMiddleware, adminController.cancelPur);
 
 export default router;
