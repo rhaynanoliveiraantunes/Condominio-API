@@ -8,12 +8,12 @@ import Participation from "../models/Participation.js";
         throw new Error('The deadline cannot be a date in the past');
     }
 
-    const newPurchase = {
+    const newPurchase = await Purchase.create({
         ...purchaseData,
         quantidadeAtual: 0,
         status: 'active',
         criadoPor: userId
-    };
+    });
 
     return newPurchase;
 };
@@ -31,7 +31,7 @@ const listActivePurchases = async () => {
 
     purchase.quantidadeAtual += quantidade;
 
-    if (purchase.quantidadeAtual >= purchase.quantidadeMina && purchase.status === 'active') {
+    if (purchase.quantidadeAtual >= purchase.quantidadeMinima && purchase.status === 'active') {
         purchase.status = 'goal_reached';
     }
 
