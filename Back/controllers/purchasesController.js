@@ -13,11 +13,11 @@ const purchasesController = {
 
     async create(req, res) {
         try {
-            const purchaseData = req.body;
+            const purchaseDate = req.body;
             const userId = req.user.id;
 
             const newPurchase = await purchaseService.createPurchase(
-                purchaseData,
+                purchaseDate,
                 userId
             );
 
@@ -78,9 +78,9 @@ const purchasesController = {
         try {
             const purchaseId = req.params.id;
             const userId = req.user.id;
-            const { quantidade } = req.body;
+            const { amount } = req.body;
 
-            if (!quantidade || quantidade <= 0) {
+            if (!amount || amount <= 0) {
                 return res.status(400).json({
                     error: "Invalid quantity",
                 });
@@ -89,7 +89,8 @@ const purchasesController = {
             const result = await purchaseService.joinPurchase(
                 purchaseId,
                 userId,
-                quantidade
+                amount
+
             );
 
             res.status(200).json(result);
@@ -119,7 +120,7 @@ const purchasesController = {
             const ranking = await Purchase.aggregate([
                 {
                     $group: {
-                        _id: "$produto",
+                        _id: "$product",
                         totalPedidos: { $sum: 1 },
                     },
                 },
