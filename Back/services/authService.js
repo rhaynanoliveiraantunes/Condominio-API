@@ -5,7 +5,7 @@ import Participation from "../models/Participation.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
- const registerUser = async (userData) => {
+ const register = async (userData) => {
    
     const { name, email, password, apartment, role } = userData;
     
