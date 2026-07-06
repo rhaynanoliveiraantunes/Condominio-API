@@ -3,26 +3,26 @@ import mongoose from 'mongoose';
 
 
 const purchaseSchema = new mongoose.Schema({
-    produto: {
+    product: {
         type: String,
         required: true
     },
-    descricao: {
+    description: {
         type: String
     },
-    valorUnitario: {
+    unitPrice: {
         type: Number,
         required: true
     },
-    quantidadeMinima: {
+    minimumQuantity: {
         type: Number,
         required: true
     },
-    quantidadeAtual: {
+    currentQuantity: {
         type: Number,
         default: 0
     },
-    prazo: {
+    term: {
         type: Date,
         required: true
     },
@@ -31,7 +31,7 @@ const purchaseSchema = new mongoose.Schema({
         enum: ['active', 'goal_reached', 'closed', 'cancelled', 'expired'],
         default: 'active'
     },
-    criadoPor: {
+    createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
