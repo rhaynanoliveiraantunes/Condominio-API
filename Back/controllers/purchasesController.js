@@ -1,4 +1,4 @@
-import * as purchaseService from "../services/purchaseService.js";
+import * as purchaseService from "../services/purchasesService.js";
 import Purchase from "../models/Purchase.js";
 
 const purchasesController = {

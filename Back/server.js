@@ -1,13 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import 'dotenv/config';
+import express from "express";
+import cors from "cors";
+import "dotenv/config";
 
-import connectDB from './config/db.js'; 
+import connectDB from "./config/db.js";
 
-import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import purchaseRoutes from './routes/purchaseRoutes.js';
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import purchaseRoutes from "./routes/purchasesRoutes.js";
 
+import notFound from "./middlewares/notFound.js";
+import errorHandler from "./middlewares/errorHandler.js";
 
 
 const app = express();

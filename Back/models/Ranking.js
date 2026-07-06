@@ -17,4 +17,4 @@ const rankingSchema = new mongoose.Schema({
 timestamps: true
 });
 
-export default mongoose.model("Ranking", LoanSchema);
+export default mongoose.model("Ranking", rankingSchema);

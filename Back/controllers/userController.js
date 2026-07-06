@@ -34,3 +34,10 @@ const toggleUserStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+export default {
+  getMe,
+  updateMe,
+  listUsers,
+  toggleUserStatus,
+};
