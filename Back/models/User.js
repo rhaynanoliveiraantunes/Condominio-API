@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 
 const userSchema = new mongoose.Schema({
-    nome: {
+    name: {
         type: String,
         required: true
     },
@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    apartamento: {
+    apartment: {
         type: String,
         required: true
     },
@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
-    ativo: {
+    active: {
         type: Boolean,
         default: false
     }

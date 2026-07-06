@@ -14,11 +14,11 @@ const participationSchema = new mongoose.Schema(
         ref: 'User',
         required: true
     },
-    quantidade: {
+    amount: {
         type: Number,
         required: true
     },
-    pago: {
+    paid: {
         type: Boolean,
         default: false
     }

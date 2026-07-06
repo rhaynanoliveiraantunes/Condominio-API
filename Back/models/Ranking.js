@@ -3,12 +3,12 @@ import mongoose from 'mongoose';
 
 
 const rankingSchema = new mongoose.Schema({
-    produto: {
+    product: {
         type: String,
         required: true,
         unique: true
     },
-    totalPedidos: {
+    product: {
         type: Number,
         default: 0
     }
