@@ -5,17 +5,17 @@ import Participation from "../models/Participation.js";
 
  const registerUser = async (userData) => {
    
-    const { nome, email, password, apartamento, role } = userData;
+    const { name, email, password, apartment, role } = userData;
     
    
     
     const newUser = {
-        nome,
+        name,
         email,
         password: hashedPassword,
-        apartamento,
+        apartment,
         role: 'user',
-        ativo: false 
+        active: false 
     };
 
     await User.create(newUser);
