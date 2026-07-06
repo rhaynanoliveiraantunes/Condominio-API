@@ -40,5 +40,4 @@ const purchaseSchema = new mongoose.Schema({
     collection: "purchases",
     timestamps: true
  });
-
- export default mongoose.model("Purchase", LoanSchema);
+export default mongoose.model("Purchase", purchaseSchema);

@@ -29,4 +29,4 @@ const participationSchema = new mongoose.Schema(
     
 });
 
-export default mongoose.model("Participation", LoanSchema);
+export default mongoose.model("Participation", participationSchema);
