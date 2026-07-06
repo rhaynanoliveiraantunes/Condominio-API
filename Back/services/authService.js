@@ -5,19 +5,20 @@ import Participation from "../models/Participation.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const register = async (userData) => {
-    const { nome, email, password, apartamento, role } = userData;
+ const registerUser = async (userData) => {
+   
+    const { name, email, password, apartment, role } = userData;
     
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt); 
     
     const newUser = {
-        nome,
+        name,
         email,
         password: hashedPassword,
-        apartamento,
-        role: role || 'user',
-        ativo: false 
+        apartment,
+        role: 'user',
+        active: false 
     };
 
     await User.create(newUser);

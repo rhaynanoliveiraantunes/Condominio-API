@@ -3,16 +3,16 @@ import Ranking from "../models/Ranking.js";
 import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
-const createPurchase = async (purchaseData, userId) => {
-    if (new Date(purchaseData.prazo) < new Date()) {
+const createPurchase = async (purchaseDate, userId) => {
+    if (new Date(purchaseDate.prazo) < new Date()) {
         throw new Error("The deadline cannot be a date in the past");
     }
 
     const newPurchase = await Purchase.create({
-        ...purchaseData,
-        quantidadeAtual: 0,
+        ...purchaseDate,
+        currentQuantity: 0,
         status: "active",
-        criadoPor: userId,
+        createdBy: userId,
     });
 
     return newPurchase;
@@ -22,7 +22,7 @@ const listActivePurchases = async () => {
     return await Purchase.find({ status: "active" });
 };
 
-const joinPurchase = async (purchaseId, userId, quantidade) => {
+const joinPurchase = async (purchaseId, userId, amount) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
@@ -33,10 +33,10 @@ const joinPurchase = async (purchaseId, userId, quantidade) => {
         throw new Error("This purchase no longer accepts new sign-ups");
     }
 
-    purchase.quantidadeAtual += quantidade;
+    purchase.currentQuantity += amount;
 
     if (
-        purchase.quantidadeAtual >= purchase.quantidadeMinima &&
+        purchase.currentQuantity >= purchase.minimumQuantity &&
         purchase.status === "active"
     ) {
         purchase.status = "goal_reached";
