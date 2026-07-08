@@ -10,7 +10,7 @@ import Participation from "../models/Participation.js";
 
 const updateUserProfile = async (userId, updateData) => {
     delete updateData.role;
-    delete updateData.ativo;
+    delete updateData.active; 
 
     return { message: "Profile successfully updated" };
 };

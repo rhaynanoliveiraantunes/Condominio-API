@@ -9,7 +9,8 @@ import jwt from "jsonwebtoken";
    
     const { name, email, password, apartment, role } = userData;
     
-    const salt = await bcry+-pt.genSalt(10);
+    
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt); 
     
     const newUser = {
@@ -18,7 +19,7 @@ import jwt from "jsonwebtoken";
         password: hashedPassword,
         apartment,
         role: 'user',
-        active: false 
+        active: true 
     };
 
     await User.create(newUser);
