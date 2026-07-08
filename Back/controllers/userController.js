@@ -10,7 +10,8 @@ const getMe = async (req, res, next) => {
 
 const updateMe = async (req, res, next) => {
   try {
-    const user = await userService.updateUserProfile(req.user._id, req.body);    res.json(user);
+    const user = await userService.updateUserProfile(req.user._id, req.body);    
+    res.json(user);
   } catch (error) {
     next(error);
   }

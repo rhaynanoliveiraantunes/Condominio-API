@@ -1,4 +1,5 @@
-import * as adminService from "../services/adminService.js";
+import adminService from "../services/adminService.js";
+
 
 const listUsers = async (req, res) => {
     try {
