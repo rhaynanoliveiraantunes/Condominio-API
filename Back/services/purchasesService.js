@@ -3,13 +3,13 @@ import Ranking from "../models/Ranking.js";
 import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
-const createPurchase = async (purchaseDate, userId) => {
-    if (new Date(purchaseDate.prazo) < new Date()) {
+const createPurchase = async (purchaseData, userId) => {
+    if (new Date(purchaseData.term) < new Date()) {
         throw new Error("The deadline cannot be a date in the past");
     }
 
     const newPurchase = await Purchase.create({
-        ...purchaseDate,
+        ...purchaseData,
         currentQuantity: 0,
         status: "active",
         createdBy: userId,
