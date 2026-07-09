@@ -19,7 +19,6 @@ const create = async (req, res) => {
             purchaseData,
             userId
         );
-
         res.status(201).json(newPurchase);
     } catch (error) {
         res.status(400).json({ error: error.message });
