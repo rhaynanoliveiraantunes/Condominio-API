@@ -107,7 +107,7 @@ const rankJoin = async (req, res) => {
         const ranking = await Purchase.aggregate([
             {
                 $group: {
-                    _id: "$product",
+                    _id: "$product", 
                     totalPedidos: { $sum: 1 },
                 },
             },
@@ -116,6 +116,13 @@ const rankJoin = async (req, res) => {
                     totalPedidos: -1,
                 },
             },
+            {
+                $project: {
+                    _id: 0, 
+                    produto: "$_id", 
+                    totalPedidos: 1 
+                }
+            }
         ]);
 
         res.status(200).json(ranking);
@@ -123,7 +130,6 @@ const rankJoin = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
-
 export default {
     getPurchase,
     create,
