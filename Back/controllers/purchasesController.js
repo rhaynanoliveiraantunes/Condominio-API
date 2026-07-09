@@ -1,10 +1,10 @@
-import * as purchaseService from "../services/purchasesService.js";
+import purchasesService from"../services/purchasesService.js";
 import Purchase from "../models/Purchase.js";
 
 const purchasesController = {
     async getPurchase(req, res) {
         try {
-            const purchases = await purchaseService.listActivePurchases();
+            const purchases = await purchasesService.listActivePurchases();
             res.status(200).json(purchases);
         } catch (error) {
             res.status(500).json({ error: error.message });
@@ -16,7 +16,7 @@ const purchasesController = {
             const purchaseDate = req.body;
             const userId = req.user.id;
 
-            const newPurchase = await purchaseService.createPurchase(
+            const newPurchase = await purchasesService.createPurchase(
                 purchaseDate,
                 userId
             );
@@ -45,7 +45,7 @@ const purchasesController = {
 
     async update(req, res) {
         try {
-            const purchase = await purchaseService.editPurchase(
+            const purchase = await purchasesService.editPurchase(
                 req.params.id,
                 req.body
             );
@@ -61,7 +61,7 @@ const purchasesController = {
 
     async cancel(req, res) {
         try {
-            const purchase = await purchaseService.cancelPurchase(
+            const purchase = await purchasesService.cancelPurchase(
                 req.params.id
             );
 
@@ -86,7 +86,7 @@ const purchasesController = {
                 });
             }
 
-            const result = await purchaseService.joinPurchase(
+            const result = await purchasesService.joinPurchase(
                 purchaseId,
                 userId,
                 amount
@@ -104,7 +104,7 @@ const purchasesController = {
             const purchaseId = req.params.id;
             const userId = req.user.id;
 
-            const result = await purchaseService.leavePurchase(
+            const result = await purchasesService.leavePurchase(
                 purchaseId,
                 userId
             );
