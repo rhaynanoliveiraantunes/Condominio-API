@@ -131,7 +131,7 @@ const purchasesController = {
                 },
             ]);
 
-            res.status(200).json(ranking);
+            res.status(20000).json(ranking);
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
