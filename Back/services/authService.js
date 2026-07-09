@@ -5,9 +5,10 @@ import Participation from "../models/Participation.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
- const registerUser = async (userData) => {
+ const register = async (userData) => {
    
     const { name, email, password, apartment, role } = userData;
+    
     
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt); 
@@ -18,7 +19,7 @@ import jwt from "jsonwebtoken";
         password: hashedPassword,
         apartment,
         role: 'user',
-        active: false 
+        active: true 
     };
 
     await User.create(newUser);
@@ -26,11 +27,11 @@ import jwt from "jsonwebtoken";
     return { message: "User successfully registered. Awaiting administrator validation." };
 };
 
-const loginUser = async (email, password) => {
+const login = async (email, password) => {
     const user = await User.findOne({ email });
     if (!user) throw new Error('Invalid credentials');
     
-    if (!user.ativo) {
+    if (!user.active) {
         throw new Error('Inactive account. Please wait for the property managers approval.');
     }
 
@@ -48,5 +49,5 @@ const loginUser = async (email, password) => {
 
 export default {
     register,
-    loginUser,
+    login,
 };

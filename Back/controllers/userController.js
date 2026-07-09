@@ -10,7 +10,7 @@ const getMe = async (req, res, next) => {
 
 const updateMe = async (req, res, next) => {
   try {
-    const user = await userService.updateMe(req.user._id, req.body);
+    const user = await userService.updateUserProfile(req.user._id, req.body);    
     res.json(user);
   } catch (error) {
     next(error);
@@ -19,7 +19,7 @@ const updateMe = async (req, res, next) => {
 
 const listUsers = async (req, res, next) => {
   try {
-    const users = await userService.listUsers();
+    const users = await userService.listAllUsers();
     res.json(users);
   } catch (error) {
     next(error);
