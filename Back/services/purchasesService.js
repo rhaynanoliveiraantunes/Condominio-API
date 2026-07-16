@@ -33,6 +33,7 @@ const joinPurchase = async (purchaseId, userId, amount) => {
         throw new Error("This purchase no longer accepts new sign-ups");
     }
 
+    
     purchase.currentQuantity += amount;
 
     if (
@@ -43,6 +44,21 @@ const joinPurchase = async (purchaseId, userId, amount) => {
     }
 
     await purchase.save();
+
+    
+    await Participation.create({
+        purchaseId: purchase._id,
+        userId: userId,
+        amount: amount,
+        paid: true 
+    });
+
+
+    await Ranking.findOneAndUpdate(
+        { product: purchase.product },
+        { $inc: { totalOrders: amount } },
+        { upsert: true, new: true }
+    );
 
     return { message: "Participation confirmed and payment made" };
 };
