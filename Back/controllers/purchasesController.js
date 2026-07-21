@@ -1,5 +1,6 @@
 import purchasesService from "../services/purchasesService.js";
 import Purchase from "../models/Purchase.js";
+import Ranking from "../models/Ranking.js";
 
 const getPurchase = async (req, res) => {
     try {
@@ -104,26 +105,8 @@ const deleteJoin = async (req, res) => {
 
 const rankJoin = async (req, res) => {
     try {
-        const ranking = await Purchase.aggregate([
-            {
-                $group: {
-                    _id: "$product", 
-                    totalPedidos: { $sum: 1 },
-                },
-            },
-            {
-                $sort: {
-                    totalPedidos: -1,
-                },
-            },
-            {
-                $project: {
-                    _id: 0, 
-                    produto: "$_id", 
-                    totalPedidos: 1 
-                }
-            }
-        ]);
+       
+        const ranking = await Ranking.find().sort({ totalOrders: -1 });
 
         res.status(200).json(ranking);
     } catch (error) {
