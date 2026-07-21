@@ -58,7 +58,7 @@ function UsersTab() {
   const [pending, setPending] = useState<string | null>(null);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin", "users"],
-    queryFn: async () => (await api.get<User[]>("/admin/users")).data,
+    queryFn: async () => (await api.get<User[]>("/users/admin")).data, 
   });
 
   const toggle = async (u: User) => {
@@ -66,7 +66,7 @@ function UsersTab() {
     if (!id) return;
     setPending(id);
     try {
-      await api.put(`/admin/users/${id}`, { active: !u.active });
+      await api.put(`/users/admin/${id}`, { active: !u.active }); 
       toast.success(u.active ? "Usuário desativado." : "Usuário ativado.");
       qc.invalidateQueries({ queryKey: ["admin", "users"] });
     } catch (err) {
