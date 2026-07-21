@@ -9,6 +9,8 @@ const router = express.Router();
 router.get("/me", authMiddleware, userController.getMe);
 router.put("/me", authMiddleware, userController.updateMe);
 
+router.get("/history", authMiddleware, userController.getHistory);
+
 router.get("/admin", authMiddleware, adminController.listUsers);
 router.put("/admin/:id", authMiddleware, adminMiddleware, adminController.toggleUserStatus);
 
