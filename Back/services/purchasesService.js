@@ -19,6 +19,20 @@ const createPurchase = async (purchaseData, userId) => {
 };
 
 const listActivePurchases = async () => {
+    const activePurchases = await Purchase.find({ status: "active" });
+    const now = new Date();
+
+    for (let purchase of activePurchases) {
+        if (new Date(purchase.term) <= now) {
+            if (purchase.currentQuantity >= purchase.minimumQuantity) {
+                purchase.status = "completed";
+            } else {
+                purchase.status = "cancelled";
+            }
+            await purchase.save();
+        }
+    }
+
     return await Purchase.find({ status: "active" });
 };
 
@@ -29,30 +43,23 @@ const joinPurchase = async (purchaseId, userId, amount) => {
         throw new Error("Purchase not found");
     }
 
-    if (purchase.status !== "active" && purchase.status !== "goal_reached") {
+    if (purchase.status !== "active") {
         throw new Error("This purchase no longer accepts new sign-ups");
     }
 
+    if (new Date(purchase.term) <= new Date()) {
+        throw new Error("The deadline for this purchase has passed");
+    }
     
     purchase.currentQuantity += amount;
-
-    if (
-        purchase.currentQuantity >= purchase.minimumQuantity &&
-        purchase.status === "active"
-    ) {
-        purchase.status = "goal_reached";
-    }
-
     await purchase.save();
 
-    
     await Participation.create({
         purchaseId: purchase._id,
         userId: userId,
         amount: amount,
         paid: true 
     });
-
 
     await Ranking.findOneAndUpdate(
         { product: purchase.product },
@@ -72,7 +79,7 @@ const leavePurchase = async (purchaseId, userId) => {
 
     if (purchase.status !== "active") {
         throw new Error(
-            "Participation cannot be cancelled once the goal has been reached or the purchase has closed"
+            "Participation cannot be cancelled once the purchase has closed"
         );
     }
 
@@ -87,7 +94,6 @@ const editPurchase = async (purchaseId, updateData) => {
     }
 
     Object.assign(purchase, updateData);
-
     await purchase.save();
 
     return purchase;
@@ -101,7 +107,6 @@ const cancelPurchase = async (purchaseId) => {
     }
 
     purchase.status = "cancelled";
-
     await purchase.save();
 
     return purchase;
