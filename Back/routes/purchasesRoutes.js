@@ -7,7 +7,7 @@ const router = express.Router();
 
 
 router.get("/", authMiddleware, purchasesController.getPurchase);
-router.post("/", authMiddleware, purchasesController.create);
+router.post("/", authMiddleware, adminMiddleware, purchasesController.create);
 
 
 router.get("/ranking", authMiddleware, purchasesController.rankJoin);
