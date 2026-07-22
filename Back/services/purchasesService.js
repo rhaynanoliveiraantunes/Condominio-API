@@ -62,7 +62,7 @@ const joinPurchase = async (purchaseId, userId, amount) => {
     });
 
     await Ranking.findOneAndUpdate(
-       { produto: purchase.product },
+       { product: purchase.product },
         { $inc: { totalOrders: amount } },
         { upsert: true, new: true }
     );
