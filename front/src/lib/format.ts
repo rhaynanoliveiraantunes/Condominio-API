@@ -31,6 +31,8 @@ export function statusLabel(status: string | undefined): string {
   switch (status) {
     case "active":
       return "Ativa";
+    case "goal_reached":
+      return "Concluída";
     case "closed":
       return "Encerrada";
     case "cancelled":
