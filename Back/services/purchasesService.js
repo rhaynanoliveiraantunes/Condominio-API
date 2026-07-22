@@ -25,7 +25,7 @@ const listActivePurchases = async () => {
     for (let purchase of activePurchases) {
         if (new Date(purchase.term) <= now) {
             if (purchase.currentQuantity >= purchase.minimumQuantity) {
-                purchase.status = "completed";
+                purchase.status = "goal_reached";
             } else {
                 purchase.status = "cancelled";
             }
