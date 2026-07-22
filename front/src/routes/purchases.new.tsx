@@ -10,7 +10,7 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { toDatetimeLocalMin } from "@/lib/format";
 
 export const Route = createFileRoute("/purchases/new")({
-  head: () => ({ meta: [{ title: "Nova purchase — CondomínioBuy" }] }),
+  head: () => ({ meta: [{ title: "Nova compra — CondomínioBuy" }] }), // <-- Corrigido aqui
   component: () => (
     <ProtectedLayout requireAdmin>
       <NewPurchase />
@@ -40,13 +40,13 @@ function NewPurchase() {
     e.preventDefault();
     const prazoDate = new Date(form.term);
     if (Number.isNaN(prazoDate.getTime()) || prazoDate.getTime() <= Date.now()) {
-      toast.error("O term precisa ser uma data futura.");
+      toast.error("O prazo precisa ser uma data futura."); // <-- Corrigido aqui
       return;
     }
     const valor = Number(form.unitPrice);
     const qtd = Number(form.minimumQuantity);
     if (!(valor > 0) || !(qtd > 0)) {
-      toast.error("Informe valor e amount mínima válidos.");
+      toast.error("Informe um valor e quantidade mínima válidos."); // <-- Corrigido aqui
       return;
     }
     setLoading(true);
@@ -61,7 +61,7 @@ function NewPurchase() {
       toast.success("Compra criada com sucesso!");
       router.navigate({ to: "/" });
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Não foi possível criar a purchase."));
+      toast.error(apiErrorMessage(err, "Não foi possível criar a compra.")); // <-- Corrigido aqui
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ function NewPurchase() {
   return (
     <div>
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Nova purchase coletiva</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Nova compra coletiva</h1> {/* <-- Corrigido aqui */}
         <p className="text-sm text-slate-500">
           Proponha um item para que os vizinhos possam aderir.
         </p>
@@ -135,7 +135,7 @@ function NewPurchase() {
           disabled={loading}
           className="w-full bg-emerald-500 hover:bg-emerald-600"
         >
-          {loading ? "Salvando..." : "Criar purchase"}
+          {loading ? "Salvando..." : "Criar compra"} {/* <-- Corrigido aqui */}
         </Button>
       </form>
     </div>
