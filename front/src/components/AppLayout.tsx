@@ -1,5 +1,5 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Home, History, Trophy, PlusCircle, ShieldCheck, LogOut, Menu, X } from "lucide-react";
+import { Home, History, Trophy, PlusCircle, ShieldCheck, LogOut, Menu, X, Sparkles } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -11,7 +11,7 @@ const navItems: NavItem[] = [
   { to: "/purchases/new", label: "Nova Compra", icon: PlusCircle, adminOnly: true },
   { to: "/history", label: "Histórico", icon: History },
   { to: "/ranking", label: "Ranking", icon: Trophy },
-  { to: "/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
+  { to: "/admin", label: "Painel Admin", icon: ShieldCheck, adminOnly: true },
 ];
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -29,116 +29,162 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
   const isActive = (to: string) => (to === "/" ? pathname === "/" : pathname.startsWith(to));
 
+  const initials = (user?.name ?? "M")
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-300">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-[#1E293B] text-slate-100 md:flex">
-        <div className="flex h-16 items-center gap-2 px-5 border-b border-white/10">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500 font-bold text-white">C</div>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col p-4 md:flex">
+        <div className="flex h-full flex-col justify-between rounded-2xl glass-panel p-5 relative overflow-hidden">
+          {/* Subtle background glow element */}
+          <div className="absolute -top-12 -left-12 h-40 w-40 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-12 -right-12 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+
           <div>
-            <p className="text-sm font-semibold leading-tight">CondomínioBuy</p>
-            <p className="text-xs text-slate-400">Compras coletivas</p>
+            {/* Logo Brand */}
+            <div className="flex items-center gap-3.5 pb-6 border-b border-white/10">
+              <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 font-extrabold text-slate-950 shadow-lg shadow-emerald-500/20">
+                <Sparkles className="h-6 w-6 text-slate-950" />
+              </div>
+              <div>
+                <span className="text-lg font-bold tracking-tight gradient-text-title block leading-tight">
+                  Condomínio<span className="text-emerald-400 font-extrabold">Buy</span>
+                </span>
+                <span className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+                  Compras Coletivas
+                </span>
+              </div>
+            </div>
+
+            {/* Navigation links */}
+            <nav className="mt-6 space-y-1.5">
+              {items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn(
+                      "group relative flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200",
+                      active
+                        ? "bg-emerald-500/15 text-emerald-300 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-emerald-500/30"
+                        : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent",
+                    )}
+                  >
+                    {active && (
+                      <span className="absolute left-0 top-2 bottom-2 w-1.5 rounded-r-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                    )}
+                    <Icon className={cn("h-5 w-5 transition-transform duration-200 group-hover:scale-110", active ? "text-emerald-400" : "text-slate-400 group-hover:text-slate-200")} />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
-        </div>
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {items.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
-                  isActive(item.to)
-                    ? "bg-emerald-500 text-white"
-                    : "text-slate-300 hover:bg-white/5 hover:text-white",
-                )}
-              >
-                <Icon className="h-4 w-4" /> {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="border-t border-white/10 p-3">
-          <div className="mb-2 px-2">
-            <p className="text-sm font-medium">{user?.name ?? "Morador"}</p>
-            <p className="text-xs text-slate-400">
-              {user?.apartment ? `Apto ${user?.apartment}` : user?.email}
-            </p>
+
+          {/* User profile section */}
+          <div className="border-t border-white/10 pt-4 mt-auto">
+            <div className="flex items-center gap-3 rounded-xl bg-slate-900/50 border border-white/5 p-3 mb-2">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-slate-700 to-slate-800 text-sm font-bold text-emerald-400 border border-emerald-500/20">
+                {initials}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-200">{user?.name ?? "Morador"}</p>
+                <p className="truncate text-xs text-slate-400">
+                  {user?.apartment ? `Apto ${user?.apartment}` : user?.email}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-2.5 text-xs font-semibold text-rose-300 transition-all hover:bg-rose-500/20 hover:border-rose-500/30"
+            >
+              <LogOut className="h-4 w-4" /> Sair da conta
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" /> Sair
-          </button>
         </div>
       </aside>
 
-      {/* Mobile top bar */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 md:hidden">
-        <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500 font-bold text-white">C</div>
-          <span className="text-sm font-semibold text-slate-800">CondomínioBuy</span>
+      {/* Mobile top header */}
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/10 bg-slate-950/80 px-4 backdrop-blur-xl md:hidden">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-400 font-bold text-slate-950 shadow-md shadow-emerald-500/20">
+            <Sparkles className="h-5 w-5 text-slate-950" />
+          </div>
+          <span className="text-base font-bold tracking-tight text-white">
+            Condomínio<span className="text-emerald-400">Buy</span>
+          </span>
         </div>
         <button
-          className="rounded-md p-2 text-slate-600 hover:bg-slate-100"
+          className="rounded-xl border border-white/10 bg-slate-900/60 p-2.5 text-slate-300 hover:bg-white/10"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="Menu"
         >
           {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </header>
+
+      {/* Mobile drawer menu */}
       {menuOpen && (
-        <div className="fixed inset-x-0 top-14 z-20 border-b border-slate-200 bg-white md:hidden">
-          <nav className="flex flex-col p-2">
+        <div className="fixed inset-x-0 top-16 z-20 border-b border-white/10 bg-slate-950/95 p-4 backdrop-blur-2xl md:hidden animate-in slide-in-from-top duration-200">
+          <nav className="flex flex-col gap-1.5">
             {items.map((item) => {
               const Icon = item.icon;
+              const active = isActive(item.to);
               return (
                 <Link
                   key={item.to}
                   to={item.to}
                   onClick={() => setMenuOpen(false)}
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
-                    isActive(item.to)
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "text-slate-700 hover:bg-slate-100",
+                    "flex items-center gap-3.5 rounded-xl px-4 py-3 text-sm font-semibold transition-colors",
+                    active
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                      : "text-slate-300 hover:bg-white/5",
                   )}
                 >
-                  <Icon className="h-4 w-4" /> {item.label}
+                  <Icon className={cn("h-5 w-5", active ? "text-emerald-400" : "text-slate-400")} />
+                  {item.label}
                 </Link>
               );
             })}
             <button
               onClick={handleLogout}
-              className="mt-1 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              className="mt-2 flex items-center gap-3 rounded-xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-300"
             >
-              <LogOut className="h-4 w-4" /> Sair
+              <LogOut className="h-5 w-5" /> Sair
             </button>
           </nav>
         </div>
       )}
 
-      <main className="pb-24 md:pb-8 md:pl-64">
-        <div className="mx-auto max-w-5xl px-4 py-6 md:px-8">{children}</div>
+      {/* Main Container */}
+      <main className="pb-28 md:pb-12 md:pl-72">
+        <div className="mx-auto max-w-6xl px-4 py-8 md:px-10">{children}</div>
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-slate-200 bg-white md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-5 border-t border-white/10 bg-slate-950/90 backdrop-blur-xl md:hidden">
         {items.slice(0, 5).map((item) => {
           const Icon = item.icon;
+          const active = isActive(item.to);
           return (
             <Link
               key={item.to}
               to={item.to}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium",
-                isActive(item.to) ? "text-emerald-600" : "text-slate-500",
+                "flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors",
+                active ? "text-emerald-400 font-bold" : "text-slate-400 hover:text-slate-200",
               )}
             >
-              <Icon className="h-5 w-5" />
-              {item.label}
+              <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_#34d399]")} />
+              <span>{item.label}</span>
             </Link>
           );
         })}
@@ -165,7 +211,6 @@ export function ProtectedLayout({
       return null;
     }
     if (user && user.active === false) {
-      // Inactive user cannot use the app
       router.navigate({ to: "/login" });
       return null;
     }
@@ -177,8 +222,11 @@ export function ProtectedLayout({
 
   if (!ready || !token) {
     return (
-      <div className="grid min-h-screen place-items-center bg-slate-50 text-slate-500">
-        Carregando...
+      <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-400">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-400 border-t-transparent" />
+          <p className="text-sm font-medium">Carregando CondomínioBuy...</p>
+        </div>
       </div>
     );
   }
