@@ -5,20 +5,17 @@ import adminMiddleware from "../middlewares/adminMiddleware.js";
 
 const router = express.Router();
 
+router.get("/exportar-acervo", purchasesController.exportAcervoXML);
 
 router.get("/", authMiddleware, purchasesController.getPurchase);
 router.post("/", authMiddleware, adminMiddleware, purchasesController.create);
 
-
 router.get("/ranking", authMiddleware, purchasesController.rankJoin);
-
 
 router.get("/:id", authMiddleware, purchasesController.getId);
 
-
 router.put("/:id", authMiddleware, adminMiddleware, purchasesController.update);
 router.patch("/:id/cancel", authMiddleware, adminMiddleware, purchasesController.cancel);
-
 
 router.post("/:id/join", authMiddleware, purchasesController.joinPur);
 router.delete("/:id/join", authMiddleware, purchasesController.deleteJoin);

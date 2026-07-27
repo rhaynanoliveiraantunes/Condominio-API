@@ -1,6 +1,7 @@
 import purchasesService from "../services/purchasesService.js";
 import Purchase from "../models/Purchase.js";
 import Ranking from "../models/Ranking.js";
+import xml2js from "xml2js";
 
 const getPurchase = async (req, res) => {
     try {
@@ -124,6 +125,35 @@ const rankJoin = async (req, res) => {
     }
 };
 
+const exportAcervoXML = async (req, res) => {
+    try {
+        const purchases = await Purchase.find().lean();
+
+        const plainPurchases = purchases.map((p) => ({
+            id: p._id ? p._id.toString() : "",
+            product: p.product || "",
+            description: p.description || "",
+            unitPrice: p.unitPrice || 0,
+            minimumQuantity: p.minimumQuantity || 0,
+            currentQuantity: p.currentQuantity || 0,
+            term: p.term ? new Date(p.term).toISOString() : "",
+            status: p.status || "",
+            createdBy: p.createdBy ? p.createdBy.toString() : "",
+            createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : "",
+            updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : ""
+        }));
+
+        const builder = new xml2js.Builder({ rootName: "acervo" });
+        const xml = builder.buildObject({ compra: plainPurchases });
+
+        res.setHeader("Content-Type", "application/xml");
+        res.setHeader("Content-Disposition", "attachment; filename=acervo-compras.xml");
+        return res.status(200).send(xml);
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+    }
+};
+
 export default {
     getPurchase,
     create,
@@ -132,5 +162,6 @@ export default {
     cancel,
     joinPur,
     deleteJoin,
-    rankJoin
+    rankJoin,
+    exportAcervoXML
 };
