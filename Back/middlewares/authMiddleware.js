@@ -11,7 +11,6 @@ const authMiddleware = async (req, res, next) => {
 
         const parts = authorization.split(" ");
 
-
         if (parts.length !== 2) {
             return res.status(401).json({ error: "Malformed token" });
         }
@@ -27,11 +26,13 @@ const authMiddleware = async (req, res, next) => {
         if (!user) {
             return res.status(401).json({ error: "User not found" });
         }
-        if (!user.active) {
-            return res.status(403).json({ error: "Inactive user" });
+
+        if (user.active) {
+            req.user = user;
+            next();
+        } else {
+            return res.status(400).json({ error: "Inactive user. Awaiting administrator approval." });
         }
-        req.user = user;
-        next();
     } catch (error) {
         return res.status(401).json({ error: "Invalid or expired token" });
     }
