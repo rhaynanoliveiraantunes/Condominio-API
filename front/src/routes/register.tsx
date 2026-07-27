@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Sparkles, User, Home, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,69 +41,129 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-10">
-      <div className="mx-auto flex max-w-md flex-col items-center">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500 font-bold text-white">
-            C
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden my-6">
+      {/* Background Glows */}
+      <div className="absolute top-1/3 right-1/2 translate-x-1/2 h-[450px] w-[450px] rounded-full bg-teal-500/15 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/3 left-1/4 h-[350px] w-[350px] rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none" />
+
+      <div className="relative z-10 w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="flex flex-col items-center text-center space-y-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-emerald-400 font-extrabold text-slate-950 shadow-xl shadow-emerald-500/25">
+            <Sparkles className="h-7 w-7 text-slate-950" />
           </div>
           <div>
-            <p className="text-lg font-bold text-slate-800">CondomínioBuy</p>
-            <p className="text-xs text-slate-500">Compras coletivas</p>
+            <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+              Condomínio<span className="gradient-text-emerald">Buy</span>
+            </h1>
+            <p className="text-xs font-semibold text-slate-400 tracking-wider uppercase mt-0.5">
+              Solicitação de Cadastro de Morador
+            </p>
           </div>
         </div>
 
-        <div className="w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-800">Criar conta</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Sua conta será liberada após validação do síndico.
-          </p>
+        {/* Card Form */}
+        <div className="relative overflow-hidden rounded-3xl glass-panel p-8 sm:p-10 space-y-6">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-white">Criar sua conta</h2>
+            <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-medium">
+              <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
+              <span>Sua conta será liberada após validação do síndico.</span>
+            </div>
+          </div>
 
-          <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+          <form className="space-y-4" onSubmit={onSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor="nome">Nome completo</Label>
-              <Input id="nome" required value={form.nome} onChange={upd("nome")} />
+              <Label htmlFor="nome" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Nome completo
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="nome"
+                  required
+                  value={form.nome}
+                  onChange={upd("nome")}
+                  placeholder="Seu nome completo"
+                  className="pl-10 h-12 rounded-xl glass-input text-sm text-white placeholder:text-slate-500"
+                />
+              </div>
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="apartamento">Apartamento</Label>
-              <Input
-                id="apartamento"
-                required
-                value={form.apartamento}
-                onChange={upd("apartamento")}
-                placeholder="Ex: 204B"
-              />
+              <Label htmlFor="apartamento" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Apartamento / Bloco
+              </Label>
+              <div className="relative">
+                <Home className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="apartamento"
+                  required
+                  value={form.apartamento}
+                  onChange={upd("apartamento")}
+                  placeholder="Ex: Apt 204 Bloco B"
+                  className="pl-10 h-12 rounded-xl glass-input text-sm text-white placeholder:text-slate-500"
+                />
+              </div>
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" required value={form.email} onChange={upd("email")} />
+              <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                E-mail de acesso
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={upd("email")}
+                  placeholder="voce@condominio.com"
+                  className="pl-10 h-12 rounded-xl glass-input text-sm text-white placeholder:text-slate-500"
+                />
+              </div>
             </div>
+
             <div className="space-y-1.5">
-              <Label htmlFor="senha">Senha</Label>
-              <Input
-                id="senha"
-                type="password"
-                required
-                minLength={6}
-                value={form.senha}
-                onChange={upd("senha")}
-              />
+              <Label htmlFor="senha" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Senha de acesso
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="senha"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={form.senha}
+                  onChange={upd("senha")}
+                  placeholder="Mínimo 6 caracteres"
+                  className="pl-10 h-12 rounded-xl glass-input text-sm text-white placeholder:text-slate-500"
+                />
+              </div>
             </div>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-500 hover:bg-emerald-600"
-            >
-              {loading ? "Enviando..." : "Cadastrar"}
-            </Button>
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-sm font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? "Enviando solicitação..." : "Enviar Solicitação de Cadastro"}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
           </form>
 
-          <p className="mt-5 text-center text-sm text-slate-500">
-            Já tem conta?{" "}
-            <Link to="/login" className="font-medium text-emerald-600 hover:underline">
-              Entrar
-            </Link>
-          </p>
+          <div className="border-t border-white/10 pt-4 text-center">
+            <p className="text-xs text-slate-400">
+              Já possui uma conta ativa?{" "}
+              <Link to="/login" className="font-bold text-emerald-400 hover:text-emerald-300 transition-colors">
+                Fazer login
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

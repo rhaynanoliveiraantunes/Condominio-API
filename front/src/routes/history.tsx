@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { History as HistoryIcon } from "lucide-react";
+import { History as HistoryIcon, ShoppingBag, DollarSign, Calendar, ArrowUpRight } from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Progress } from "@/components/ui/progress";
 import { api, apiErrorMessage } from "@/lib/api";
 import { formatBRL, formatDateTime } from "@/lib/format";
 
@@ -29,7 +28,6 @@ function getPurchase(item: Participation): PurchaseSnapshot | undefined {
   const raw = item.purchase ?? item.purchaseId;
   if (!raw) return undefined;
   if (typeof raw === "string") {
-    // purchaseId may be a string when the backend hasn't populated it.
     return undefined;
   }
   return raw;
@@ -56,29 +54,71 @@ function HistoryPage() {
     return db - da;
   });
 
-  return (
-    <div>
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Meu histórico</h1>
-        <p className="text-sm text-slate-500">Compras em que você participou.</p>
-      </header>
+  const totalSpent = items.reduce((sum, item) => {
+    const p = getPurchase(item);
+    if (!p) return sum;
+    return sum + (item.amount ?? 1) * p.unitPrice;
+  }, 0);
 
+  return (
+    <div className="space-y-8">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-3xl glass-panel p-8 md:p-10">
+        <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+              Meu Histórico de <span className="gradient-text-emerald">Adesões</span>
+            </h1>
+            <p className="text-sm text-slate-300">
+              Acompanhe todas as compras coletivas em que você participou no condomínio.
+            </p>
+          </div>
+
+          {/* Quick summary stats */}
+          <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/60 p-4 backdrop-blur-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              <DollarSign className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="text-xs uppercase font-semibold tracking-wider text-slate-400 block">Total em Compras</span>
+              <span className="text-2xl font-extrabold gradient-text-emerald">{formatBRL(totalSpent)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Loading state */}
       {isLoading && (
-        <div className="rounded-xl bg-white p-8 text-center text-slate-500">Carregando...</div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="h-48 animate-pulse rounded-2xl border border-white/10 bg-slate-900/40 p-6" />
+          ))}
+        </div>
       )}
+
+      {/* Error state */}
       {isError && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-300">
           {apiErrorMessage(error, "Não foi possível carregar seu histórico.")}
         </div>
       )}
+
+      {/* Empty State */}
       {!isLoading && !isError && items.length === 0 && (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center">
-          <HistoryIcon className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-          <p className="font-medium text-slate-700">Você ainda não participou de compras.</p>
+        <div className="rounded-3xl border border-dashed border-white/10 bg-slate-900/30 p-12 text-center backdrop-blur-md">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <HistoryIcon className="h-8 w-8" />
+          </div>
+          <h3 className="text-lg font-bold text-white">Nenhuma participação registrada</h3>
+          <p className="mt-1 text-sm text-slate-400 max-w-sm mx-auto">
+            Você ainda não aderiu a nenhuma compra coletiva. Navegue na página inicial para ver as oportunidades ativas!
+          </p>
         </div>
       )}
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Items Grid */}
+      <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item, i) => {
           const purchase = getPurchase(item);
           const amount = item.amount ?? 1;
@@ -92,55 +132,59 @@ function HistoryPage() {
                 <Link
                   to="/purchases/$id"
                   params={{ id: purchase._id }}
-                  className="block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                  className="group relative flex flex-col justify-between overflow-hidden rounded-2xl glass-card p-6 h-full transition-all duration-300"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-slate-800 line-clamp-2">
-                      {purchase.product}
-                    </h3>
-                    <StatusBadge status={purchase.status} />
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-                    <span className="font-semibold text-emerald-600">
-                      {formatBRL(purchase.unitPrice)}
-                    </span>
-                    <span className="text-slate-500">Quantidade: {amount}</span>
-                  </div>
-
-                 
-                  <div className="mt-3 border-t border-slate-100 pt-3 flex items-center justify-between">
-                    <span className="font-medium text-slate-600">Total a pagar:</span>
-                    <span className="text-lg font-bold text-emerald-700">
-                      {formatBRL(amount * purchase.unitPrice)}
-                    </span>
-                  </div>
-                
-
-                  {purchase.term && (
-                    <div className="mt-2 text-xs text-slate-500">
-                      Prazo: {formatDateTime(purchase.term)}
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-bold text-white group-hover:text-emerald-300 transition-colors line-clamp-2">
+                        {purchase.product}
+                      </h3>
+                      <StatusBadge status={purchase.status} />
                     </div>
-                  )}
 
-                  <div className="mt-3">
-                    <Progress value={pct} className="h-2" />
-                    <div className="mt-1 flex justify-between text-xs text-slate-500">
-                      <span>
-                        {cur} / {min} confirmados
+                    <div className="mt-4 space-y-2 border-t border-white/5 pt-4 text-xs text-slate-300">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Preço unitário:</span>
+                        <span className="font-semibold text-slate-200">{formatBRL(purchase.unitPrice)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Sua quantidade:</span>
+                        <span className="font-bold text-white">{amount} un</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-emerald-300">Seu Total:</span>
+                      <span className="text-lg font-extrabold text-emerald-400">
+                        {formatBRL(amount * purchase.unitPrice)}
                       </span>
-                      <span>{pct}%</span>
+                    </div>
+
+                    {purchase.term && (
+                      <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+                        <Calendar className="h-3.5 w-3.5 text-slate-500" />
+                        <span>Prazo: {formatDateTime(purchase.term)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-5 border-t border-white/5 pt-4">
+                    <div className="mb-1.5 flex justify-between text-xs font-semibold">
+                      <span className="text-slate-400">{cur} de {min} confirmados</span>
+                      <span className="text-emerald-400">{pct}%</span>
+                    </div>
+                    <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-950 p-0.5 border border-white/5">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
                   </div>
                 </Link>
               ) : (
-                <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <h3 className="text-lg font-semibold text-slate-800">Compra</h3>
-                  </div>
-                  <div className="mt-4 text-sm text-slate-500">
-                    Quantidade: {amount}
-                  </div>
+                <div className="rounded-2xl glass-card p-6">
+                  <h3 className="text-lg font-bold text-white">Compra Registrada</h3>
+                  <p className="mt-2 text-sm text-slate-400">Quantidade: {amount}</p>
                 </div>
               )}
             </li>
