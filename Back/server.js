@@ -7,21 +7,22 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import purchaseRoutes from "./routes/purchasesRoutes.js";
+import purchasesController from "./controllers/purchasesController.js";
 
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
 app.get("/", (req, res) => {
     res.json({ message: "API Condominio funcionando" });
-  });
+});
 
-
+app.get("/exportar-acervo", purchasesController.exportAcervoXML);
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
