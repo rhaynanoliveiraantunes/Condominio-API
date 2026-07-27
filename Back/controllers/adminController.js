@@ -1,6 +1,5 @@
 import adminService from "../services/adminService.js";
 
-
 const listUsers = async (req, res) => {
     try {
         const users = await adminService.listUsers();
@@ -14,10 +13,14 @@ const toggleUserStatus = async (req, res) => {
     try {
         const user = await adminService.toggleUserStatus(req.params.id);
 
-        res.status(200).json({
-            message: "User status updated successfully",
-            user,
-        });
+        if (user) {
+            res.status(200).json({
+                message: "User status updated successfully",
+                user,
+            });
+        } else {
+            res.status(400).json({ error: "User status update failed" });
+        }
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

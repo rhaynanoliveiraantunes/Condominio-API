@@ -7,15 +7,13 @@ const listUsers = async () => {
 const toggleUserStatus = async (userId) => {
     const user = await User.findById(userId);
 
-    if (!user) {
+    if (user) {
+        user.active = !user.active;
+        await user.save();
+        return user;
+    } else {
         throw new Error("User not found");
     }
-
-    user.ativo = !user.ativo;
-
-    await user.save();
-
-    return user;
 };
 
 export default {
