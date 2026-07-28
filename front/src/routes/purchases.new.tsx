@@ -1,5 +1,6 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PackagePlus, Sparkles, DollarSign, Hash, Calendar, FileText, QrCode } from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/purchases/new")({
 
 function NewPurchase() {
   const router = useRouter();
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     product: "",
@@ -67,6 +69,8 @@ function NewPurchase() {
         syndicPixKey: form.syndicPixKey.trim(),
       });
       toast.success("Compra coletiva criada com sucesso!");
+      qc.invalidateQueries({ queryKey: ["purchases"] });
+      qc.invalidateQueries({ queryKey: ["purchases", "active"] });
       router.navigate({ to: "/" });
     } catch (err) {
       toast.error(apiErrorMessage(err, "Não foi possível criar a compra."));

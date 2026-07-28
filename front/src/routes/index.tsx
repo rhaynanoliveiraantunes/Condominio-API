@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Search, ArrowUpDown, ShoppingCart, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Search, ArrowUpDown, ShoppingCart, Sparkles, Users } from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { PurchaseCard, type Purchase } from "@/components/PurchaseCard";
 import { api, apiErrorMessage } from "@/lib/api";
@@ -38,7 +38,13 @@ function ActivePurchases() {
     queryFn: async () => (await api.get<Purchase[]>("/purchases")).data,
   });
 
-  const activeItems = useMemo(() => (data ?? []).filter((p) => p.status === "active"), [data]);
+  const activeItems = useMemo(
+    () =>
+      (data ?? []).filter((p) =>
+        ["OPEN", "active", "MINIMUM_REACHED", "goal_reached"].includes(p.status),
+      ),
+    [data],
+  );
 
   const totalParticipants = useMemo(
     () => activeItems.reduce((acc, curr) => acc + (curr.currentQuantity || 0), 0),
