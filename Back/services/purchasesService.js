@@ -3,14 +3,14 @@ import Ranking from "../models/Ranking.js";
 import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
-const createPurchase = async (purchaseData, userId, condominioId) => {
-    if (!condominioId) {
+const createPurchase = async (purchaseData, userId, condoId) => {
+    if (!condoId) {
         throw new Error("O condomínio é obrigatório para cadastrar uma compra.");
     }
     if (new Date(purchaseData.term) >= new Date()) {
         const newPurchase = await Purchase.create({
             ...purchaseData,
-            condominioId,
+            condoId,
             currentQuantity: 0,
             status: "active",
             createdBy: userId,
@@ -22,10 +22,10 @@ const createPurchase = async (purchaseData, userId, condominioId) => {
     }
 };
 
-const listActivePurchases = async (condominioId, userRole) => {
-    const filter = (userRole === 'SUPER_ADMIN' || !condominioId) 
+const listActivePurchases = async (condoId, userRole) => {
+    const filter = (userRole === 'SUPER_ADMIN' || !condoId) 
         ? { status: "active" } 
-        : { status: "active", condominioId };
+        : { status: "active", condoId };
 
     const activePurchases = await Purchase.find(filter);
     const now = new Date();
@@ -44,14 +44,14 @@ const listActivePurchases = async (condominioId, userRole) => {
     return await Purchase.find(filter);
 };
 
-const joinPurchase = async (purchaseId, userId, amount, userCondominioId, userRole) => {
+const joinPurchase = async (purchaseId, userId, amount, userCondoId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
         throw new Error("Compra não encontrada.");
     }
 
-    if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+    if (userRole !== 'SUPER_ADMIN' && userCondoId && purchase.condoId.toString() !== userCondoId.toString()) {
         throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
     }
 
@@ -84,14 +84,14 @@ const joinPurchase = async (purchaseId, userId, amount, userCondominioId, userRo
     }
 };
 
-const leavePurchase = async (purchaseId, userId, userCondominioId, userRole) => {
+const leavePurchase = async (purchaseId, userId, userCondoId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
         throw new Error("Compra não encontrada.");
     }
 
-    if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+    if (userRole !== 'SUPER_ADMIN' && userCondoId && purchase.condoId.toString() !== userCondoId.toString()) {
         throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
     }
 
@@ -104,11 +104,11 @@ const leavePurchase = async (purchaseId, userId, userCondominioId, userRole) => 
     }
 };
 
-const editPurchase = async (purchaseId, updateData, userCondominioId, userRole) => {
+const editPurchase = async (purchaseId, updateData, userCondoId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (purchase) {
-        if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+        if (userRole !== 'SUPER_ADMIN' && userCondoId && purchase.condoId.toString() !== userCondoId.toString()) {
             throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
         }
 
@@ -121,11 +121,11 @@ const editPurchase = async (purchaseId, updateData, userCondominioId, userRole) 
     }
 };
 
-const cancelPurchase = async (purchaseId, userCondominioId, userRole) => {
+const cancelPurchase = async (purchaseId, userCondoId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (purchase) {
-        if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+        if (userRole !== 'SUPER_ADMIN' && userCondoId && purchase.condoId.toString() !== userCondoId.toString()) {
             throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
         }
 

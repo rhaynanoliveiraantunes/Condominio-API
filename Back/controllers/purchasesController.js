@@ -5,9 +5,9 @@ import xml2js from "xml2js";
 
 const getPurchase = async (req, res) => {
     try {
-        const condominioId = req.user?.condominioId;
+        const condoId = req.user?.condoId;
         const role = req.user?.role;
-        const purchases = await purchasesService.listActivePurchases(condominioId, role);
+        const purchases = await purchasesService.listActivePurchases(condoId, role);
         res.status(200).json(purchases);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -18,12 +18,12 @@ const create = async (req, res) => {
     try {
         const purchaseData = req.body; 
         const userId = req.user.id;
-        const condominioId = req.user.role === 'SUPER_ADMIN' ? (req.body.condominioId || req.user.condominioId) : req.user.condominioId;
+        const condoId = req.user.role === 'SUPER_ADMIN' ? (req.body.condoId || req.user.condoId) : req.user.condoId;
 
         const newPurchase = await purchasesService.createPurchase(
             purchaseData,
             userId,
-            condominioId
+            condoId
         );
         res.status(201).json(newPurchase);
     } catch (error) {
@@ -35,7 +35,7 @@ const getId = async (req, res) => {
     try {
         const purchase = await Purchase.findById(req.params.id);
         if (purchase) {
-            if (req.user.role !== 'SUPER_ADMIN' && req.user.condominioId && purchase.condominioId.toString() !== req.user.condominioId.toString()) {
+            if (req.user.role !== 'SUPER_ADMIN' && req.user.condoId && purchase.condoId.toString() !== req.user.condoId.toString()) {
                 return res.status(400).json({ error: "Acesso negado a compras de outro condomínio" });
             }
             res.status(200).json(purchase);
@@ -52,7 +52,7 @@ const update = async (req, res) => {
         const purchase = await purchasesService.editPurchase(
             req.params.id,
             req.body,
-            req.user.condominioId,
+            req.user.condoId,
             req.user.role
         );
 
@@ -73,7 +73,7 @@ const cancel = async (req, res) => {
     try {
         const purchase = await purchasesService.cancelPurchase(
             req.params.id,
-            req.user.condominioId,
+            req.user.condoId,
             req.user.role
         );
         if (purchase) {
@@ -100,7 +100,7 @@ const joinPur = async (req, res) => {
                 purchaseId,
                 userId,
                 amount,
-                req.user.condominioId,
+                req.user.condoId,
                 req.user.role
             );
 
@@ -123,7 +123,7 @@ const deleteJoin = async (req, res) => {
         const result = await purchasesService.leavePurchase(
             purchaseId,
             userId,
-            req.user.condominioId,
+            req.user.condoId,
             req.user.role
         );
 
@@ -144,9 +144,9 @@ const rankJoin = async (req, res) => {
 
 const exportAcervoXML = async (req, res) => {
     try {
-        const filter = (req.user?.role === 'SUPER_ADMIN' || !req.user?.condominioId)
+        const filter = (req.user?.role === 'SUPER_ADMIN' || !req.user?.condoId)
             ? {}
-            : { condominioId: req.user.condominioId };
+            : { condoId: req.user.condoId };
 
         const purchases = await Purchase.find(filter).lean();
 
@@ -159,7 +159,7 @@ const exportAcervoXML = async (req, res) => {
             currentQuantity: p.currentQuantity || 0,
             term: p.term ? new Date(p.term).toISOString() : "",
             status: p.status || "",
-            condominioId: p.condominioId ? p.condominioId.toString() : "",
+            condoId: p.condoId ? p.condoId.toString() : "",
             createdBy: p.createdBy ? p.createdBy.toString() : "",
             createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : "",
             updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : ""

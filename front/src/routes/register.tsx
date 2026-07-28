@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api, apiErrorMessage } from "@/lib/api";
-import type { CondominioItem } from "@/lib/auth";
+import type { CondoItem } from "@/lib/auth";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Cadastro — CondomínioBuy" }] }),
@@ -22,18 +22,18 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ nome: "", apartamento: "", email: "", senha: "", condominioId: "" });
-  const [condominios, setCondominios] = useState<CondominioItem[]>([]);
+  const [form, setForm] = useState({ nome: "", apartamento: "", email: "", senha: "", condoId: "" });
+  const [condos, setCondos] = useState<CondoItem[]>([]);
   const [loadingCondos, setLoadingCondos] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function fetchCondominios() {
+    async function fetchCondos() {
       try {
-        const { data } = await api.get<CondominioItem[]>("/condominios");
-        setCondominios(data ?? []);
+        const { data } = await api.get<CondoItem[]>("/condos");
+        setCondos(data ?? []);
         if (data && data.length > 0) {
-          setForm((f) => ({ ...f, condominioId: data[0]._id }));
+          setForm((f) => ({ ...f, condoId: data[0]._id }));
         }
       } catch {
         /* noop */
@@ -41,7 +41,7 @@ function RegisterPage() {
         setLoadingCondos(false);
       }
     }
-    fetchCondominios();
+    fetchCondos();
   }, []);
 
   const upd = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -49,7 +49,7 @@ function RegisterPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.condominioId) {
+    if (!form.condoId) {
       toast.error("Por favor, selecione o seu condomínio.");
       return;
     }
@@ -60,7 +60,7 @@ function RegisterPage() {
         apartment: form.apartamento,
         email: form.email,
         password: form.senha,
-        condominioId: form.condominioId,
+        condoId: form.condoId,
       };
       await api.post("/auth/register", payload);
       toast.success("Cadastro enviado! Aguarde a aprovação do síndico do seu condomínio para acessar.");
@@ -117,19 +117,19 @@ function RegisterPage() {
                 </div>
               ) : (
                 <Select
-                  value={form.condominioId}
-                  onValueChange={(val) => setForm((f) => ({ ...f, condominioId: val }))}
+                  value={form.condoId}
+                  onValueChange={(val) => setForm((f) => ({ ...f, condoId: val }))}
                 >
                   <SelectTrigger className="h-12 w-full rounded-xl glass-input text-slate-100 border border-white/12">
                     <SelectValue placeholder="Selecione seu condomínio" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border border-white/10 text-slate-200">
-                    {condominios.map((c) => (
+                    {condos.map((c) => (
                       <SelectItem key={c._id} value={c._id}>
                         {c.name} — {c.address}
                       </SelectItem>
                     ))}
-                    {condominios.length === 0 && (
+                    {condos.length === 0 && (
                       <SelectItem value="none" disabled>
                         Nenhum condomínio cadastrado
                       </SelectItem>
@@ -213,7 +213,7 @@ function RegisterPage() {
             <div className="pt-2">
               <Button
                 type="submit"
-                disabled={loading || !form.condominioId}
+                disabled={loading || !form.condoId}
                 className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-sm font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
               >
                 {loading ? "Enviando solicitação..." : "Enviar Solicitação de Cadastro"}

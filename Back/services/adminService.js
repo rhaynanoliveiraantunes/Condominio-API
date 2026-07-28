@@ -6,21 +6,21 @@ const listUsers = async (currentUser) => {
     }
 
     if (currentUser.role === 'SUPER_ADMIN') {
-        return await User.find().select("-password").populate("condominioId", "name address");
+        return await User.find().select("-password").populate("condoId", "name address");
     }
 
-    if (!currentUser.condominioId) {
+    if (!currentUser.condoId) {
         return [];
     }
 
-    return await User.find({ condominioId: currentUser.condominioId }).select("-password").populate("condominioId", "name address");
+    return await User.find({ condoId: currentUser.condoId }).select("-password").populate("condoId", "name address");
 };
 
 const toggleUserStatus = async (userId, currentUser) => {
     const user = await User.findById(userId);
 
     if (user) {
-        if (currentUser.role !== 'SUPER_ADMIN' && currentUser.condominioId && user.condominioId && user.condominioId.toString() !== currentUser.condominioId.toString()) {
+        if (currentUser.role !== 'SUPER_ADMIN' && currentUser.condoId && user.condoId && user.condoId.toString() !== currentUser.condoId.toString()) {
             throw new Error("Acesso negado. Você só pode gerenciar moradores do seu próprio condomínio.");
         }
 

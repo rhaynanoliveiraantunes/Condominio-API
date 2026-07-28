@@ -23,9 +23,9 @@ const userSchema = new mongoose.Schema({
         enum: ['SUPER_ADMIN', 'SYNDIC', 'RESIDENT', 'admin', 'user'],
         default: 'RESIDENT'
     },
-    condominioId: {
+    condoId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Condominio',
+        ref: 'Condo',
         required: function() {
             return this.role !== 'SUPER_ADMIN';
         }

@@ -1,16 +1,16 @@
-import condominioService from "../services/condominioService.js";
+import condoService from "../services/condoService.js";
 
 const create = async (req, res) => {
     try {
         if (req.user && req.user.role === 'SUPER_ADMIN') {
-            const condominio = await condominioService.createCondominio(req.body);
+            const condo = await condoService.createCondo(req.body);
             return res.status(201).json({
                 message: "Condomínio cadastrado com sucesso",
-                condominio: {
-                    _id: condominio._id,
-                    name: condominio.name,
-                    address: condominio.address,
-                    createdAt: condominio.createdAt
+                condo: {
+                    _id: condo._id,
+                    name: condo.name,
+                    address: condo.address,
+                    createdAt: condo.createdAt
                 }
             });
         } else {
@@ -23,7 +23,7 @@ const create = async (req, res) => {
 
 const list = async (req, res) => {
     try {
-        const list = await condominioService.listCondominios();
+        const list = await condoService.listCondos();
         return res.status(200).json(list);
     } catch (error) {
         return res.status(500).json({ error: error.message });

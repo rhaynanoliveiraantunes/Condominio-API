@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const condominioSchema = new mongoose.Schema({
+const condoSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -12,8 +12,8 @@ const condominioSchema = new mongoose.Schema({
         trim: true
     }
 }, { 
-    collection: "condominios",
+    collection: "condos",
     timestamps: true 
 });
 
-export default mongoose.model("Condominio", condominioSchema);
+export default mongoose.model("Condo", condoSchema);

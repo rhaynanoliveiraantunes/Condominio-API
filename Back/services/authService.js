@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const register = async (userData) => {
-    const { name, email, password, apartment, condominioId, role } = userData; 
+    const { name, email, password, apartment, condoId, role } = userData; 
     
     if (!name || !email || !password || !apartment) {
         throw new Error("Preencha todos os campos obrigatórios (nome, email, senha, apartamento).");
@@ -11,7 +11,7 @@ const register = async (userData) => {
 
     const assignedRole = role && ['SUPER_ADMIN', 'SYNDIC', 'RESIDENT'].includes(role) ? role : 'RESIDENT';
 
-    if (assignedRole !== 'SUPER_ADMIN' && !condominioId) {
+    if (assignedRole !== 'SUPER_ADMIN' && !condoId) {
         throw new Error("Informe o condomínio ao qual o usuário pertence.");
     }
 
@@ -28,7 +28,7 @@ const register = async (userData) => {
         email,
         password: hashedPassword,
         apartment,
-        condominioId: assignedRole !== 'SUPER_ADMIN' ? condominioId : undefined,
+        condoId: assignedRole !== 'SUPER_ADMIN' ? condoId : undefined,
         role: assignedRole, 
         active: false 
     };
@@ -51,7 +51,7 @@ const login = async (email, password) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (isMatch) {
             const token = jwt.sign(
-                { id: user._id, role: user.role, condominioId: user.condominioId },
+                { id: user._id, role: user.role, condoId: user.condoId },
                 process.env.JWT_SECRET,
                 { expiresIn: '1d' }
             );
@@ -64,7 +64,7 @@ const login = async (email, password) => {
                     email: user.email,
                     apartment: user.apartment,
                     role: user.role,
-                    condominioId: user.condominioId,
+                    condoId: user.condoId,
                     active: user.active
                 } 
             };

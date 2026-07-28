@@ -29,9 +29,9 @@ const purchaseSchema = new mongoose.Schema({
         enum: ['active', 'goal_reached', 'closed', 'cancelled', 'expired'],
         default: 'active'
     },
-    condominioId: {
+    condoId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Condominio',
+        ref: 'Condo',
         required: true
     },
     createdBy: {

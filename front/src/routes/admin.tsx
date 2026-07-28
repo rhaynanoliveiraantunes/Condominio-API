@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, Users, ShoppingBag, Sparkles, Building2, Plus, CheckCircle, ShieldAlert } from "lucide-react";
+import { ShieldCheck, Users, ShoppingBag, Sparkles, Building2, ShieldAlert } from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { api, apiErrorMessage } from "@/lib/api";
 import { formatBRL, formatDateTime } from "@/lib/format";
-import { useAuth, isSuperAdmin, isSyndic, type User, type CondominioItem } from "@/lib/auth";
+import { useAuth, isSuperAdmin, isSyndic, type User, type CondoItem } from "@/lib/auth";
 import type { Purchase } from "@/components/PurchaseCard";
 
 // Super Admin & Syndic Management Dashboard - CondomínioBuy Multi-Tenant
@@ -78,11 +78,11 @@ function AdminPage() {
         </div>
       </div>
 
-      <Tabs defaultValue={superAdmin ? "condominios" : "users"} className="space-y-6">
+      <Tabs defaultValue={superAdmin ? "condos" : "users"} className="space-y-6">
         <TabsList className="h-13 rounded-2xl bg-slate-900/80 border border-white/10 p-1.5 backdrop-blur-md">
           {superAdmin && (
             <TabsTrigger
-              value="condominios"
+              value="condos"
               className="rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
             >
               <Building2 className="h-4 w-4" /> Gestão de Condomínios
@@ -103,8 +103,8 @@ function AdminPage() {
         </TabsList>
 
         {superAdmin && (
-          <TabsContent value="condominios">
-            <CondominiosTab />
+          <TabsContent value="condos">
+            <CondosTab />
           </TabsContent>
         )}
 
@@ -120,16 +120,16 @@ function AdminPage() {
   );
 }
 
-/* SUPER_ADMIN: Tab to create and list condomínios */
-function CondominiosTab() {
+/* SUPER_ADMIN: Tab to create and list condos */
+function CondosTab() {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["condominios"],
-    queryFn: async () => (await api.get<CondominioItem[]>("/condominios")).data,
+    queryKey: ["condos"],
+    queryFn: async () => (await api.get<CondoItem[]>("/condos")).data,
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -140,11 +140,11 @@ function CondominiosTab() {
     }
     setLoading(true);
     try {
-      await api.post("/condominios", { name, address });
+      await api.post("/condos", { name, address });
       toast.success("Condomínio cadastrado com sucesso!");
       setName("");
       setAddress("");
-      qc.invalidateQueries({ queryKey: ["condominios"] });
+      qc.invalidateQueries({ queryKey: ["condos"] });
     } catch (err) {
       toast.error(apiErrorMessage(err, "Não foi possível cadastrar o condomínio."));
     } finally {
@@ -152,7 +152,7 @@ function CondominiosTab() {
     }
   };
 
-  const condominios = data ?? [];
+  const condos = data ?? [];
 
   return (
     <div className="space-y-6">
@@ -198,7 +198,7 @@ function CondominiosTab() {
         </Button>
       </form>
 
-      {/* Condomínios List */}
+      {/* Condos List */}
       <div className="overflow-hidden rounded-3xl glass-panel border border-white/10">
         <div className="overflow-x-auto">
           <Table>
@@ -210,7 +210,7 @@ function CondominiosTab() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {condominios.map((c) => (
+              {condos.map((c) => (
                 <TableRow key={c._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="font-bold text-white py-4 flex items-center gap-2">
                     <Building2 className="h-4 w-4 text-emerald-400" />
@@ -220,7 +220,7 @@ function CondominiosTab() {
                   <TableCell className="text-right pr-6 font-mono text-xs text-slate-500">{c._id}</TableCell>
                 </TableRow>
               ))}
-              {condominios.length === 0 && (
+              {condos.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="py-8 text-center text-slate-400">
                     Nenhum condomínio cadastrado.
@@ -235,7 +235,7 @@ function CondominiosTab() {
   );
 }
 
-/* Users Tab: Allows SYNDIC to approve residents of their condomínio, or SUPER_ADMIN for all */
+/* Users Tab: Allows SYNDIC to approve residents of their condo, or SUPER_ADMIN for all */
 function UsersTab({ superAdmin }: { superAdmin: boolean }) {
   const qc = useQueryClient();
   const [pending, setPending] = useState<string | null>(null);

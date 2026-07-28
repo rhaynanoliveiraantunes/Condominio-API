@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "./api";
 
-export type CondominioItem = {
+export type CondoItem = {
   _id: string;
   name: string;
   address: string;
@@ -14,7 +14,7 @@ export type User = {
   email?: string;
   apartment?: string;
   role?: "SUPER_ADMIN" | "SYNDIC" | "RESIDENT" | "admin" | "user" | string;
-  condominioId?: string | CondominioItem;
+  condoId?: string | CondoItem;
   active?: boolean;
 };
 
