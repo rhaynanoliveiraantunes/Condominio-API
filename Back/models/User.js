@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-
-
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -22,8 +20,15 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
-        default: 'user'
+        enum: ['SUPER_ADMIN', 'SYNDIC', 'RESIDENT', 'admin', 'user'],
+        default: 'RESIDENT'
+    },
+    condominioId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Condominio',
+        required: function() {
+            return this.role !== 'SUPER_ADMIN';
+        }
     },
     active: {
         type: Boolean,
