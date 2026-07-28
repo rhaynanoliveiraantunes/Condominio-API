@@ -1,13 +1,20 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "./api";
 
+export type CondominioItem = {
+  _id: string;
+  name: string;
+  address: string;
+};
+
 export type User = {
   _id?: string;
   id?: string;
   name?: string;
   email?: string;
   apartment?: string;
-  role?: "user" | "admin" | string;
+  role?: "SUPER_ADMIN" | "SYNDIC" | "RESIDENT" | "admin" | "user" | string;
+  condominioId?: string | CondominioItem;
   active?: boolean;
 };
 
@@ -106,4 +113,12 @@ export function useAuth() {
 
 export function currentUserId(u: User | null): string | undefined {
   return u?._id ?? u?.id;
+}
+
+export function isSuperAdmin(u: User | null): boolean {
+  return u?.role === "SUPER_ADMIN";
+}
+
+export function isSyndic(u: User | null): boolean {
+  return u?.role === "SYNDIC" || u?.role === "admin" || u?.role === "SUPER_ADMIN";
 }

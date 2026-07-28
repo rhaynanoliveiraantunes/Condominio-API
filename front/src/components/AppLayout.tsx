@@ -1,7 +1,7 @@
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Home, History, Trophy, PlusCircle, ShieldCheck, LogOut, Menu, X, Sparkles } from "lucide-react";
+import { Home, History, Trophy, PlusCircle, ShieldCheck, LogOut, Menu, X, Sparkles, Building2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSyndic, isSuperAdmin } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 type NavItem = { to: string; label: string; icon: typeof Home; adminOnly?: boolean };
@@ -20,7 +20,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const items = navItems.filter((i) => !i.adminOnly || user?.role === "admin");
+  const canAccessAdmin = isSyndic(user) || isSuperAdmin(user);
+  const items = navItems.filter((i) => !i.adminOnly || canAccessAdmin);
 
   const handleLogout = () => {
     logout();
@@ -35,6 +36,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  const roleBadgeLabel = isSuperAdmin(user)
+    ? "Super Admin"
+    : isSyndic(user)
+      ? "Síndico"
+      : "Morador";
 
   return (
     <div className="min-h-screen text-slate-100 selection:bg-emerald-500/30 selection:text-emerald-300">
@@ -95,7 +102,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {initials}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-slate-200">{user?.name ?? "Morador"}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate text-sm font-semibold text-slate-200">{user?.name ?? "Usuário"}</p>
+                  <span className="rounded-md bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-bold text-emerald-300">
+                    {roleBadgeLabel}
+                  </span>
+                </div>
                 <p className="truncate text-xs text-slate-400">
                   {user?.apartment ? `Apto ${user?.apartment}` : user?.email}
                 </p>
@@ -214,7 +226,7 @@ export function ProtectedLayout({
       router.navigate({ to: "/login" });
       return null;
     }
-    if (requireAdmin && user?.role !== "admin") {
+    if (requireAdmin && !isSyndic(user) && !isSuperAdmin(user)) {
       router.navigate({ to: "/" });
       return null;
     }

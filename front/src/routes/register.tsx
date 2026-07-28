@@ -1,11 +1,19 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Sparkles, User, Home, Mail, Lock, ArrowRight, ShieldCheck } from "lucide-react";
+import { Sparkles, User, Home, Mail, Lock, ArrowRight, ShieldCheck, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { api, apiErrorMessage } from "@/lib/api";
+import type { CondominioItem } from "@/lib/auth";
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "Cadastro — CondomínioBuy" }] }),
@@ -14,14 +22,37 @@ export const Route = createFileRoute("/register")({
 
 function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ nome: "", apartamento: "", email: "", senha: "" });
+  const [form, setForm] = useState({ nome: "", apartamento: "", email: "", senha: "", condominioId: "" });
+  const [condominios, setCondominios] = useState<CondominioItem[]>([]);
+  const [loadingCondos, setLoadingCondos] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    async function fetchCondominios() {
+      try {
+        const { data } = await api.get<CondominioItem[]>("/condominios");
+        setCondominios(data ?? []);
+        if (data && data.length > 0) {
+          setForm((f) => ({ ...f, condominioId: data[0]._id }));
+        }
+      } catch {
+        /* noop */
+      } finally {
+        setLoadingCondos(false);
+      }
+    }
+    fetchCondominios();
+  }, []);
 
   const upd = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.condominioId) {
+      toast.error("Por favor, selecione o seu condomínio.");
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -29,9 +60,10 @@ function RegisterPage() {
         apartment: form.apartamento,
         email: form.email,
         password: form.senha,
+        condominioId: form.condominioId,
       };
       await api.post("/auth/register", payload);
-      toast.success("Cadastro enviado! Aguarde a aprovação do síndico para acessar.");
+      toast.success("Cadastro enviado! Aguarde a aprovação do síndico do seu condomínio para acessar.");
       router.navigate({ to: "/login" });
     } catch (err) {
       toast.error(apiErrorMessage(err, "Não foi possível concluir o cadastro."));
@@ -73,6 +105,40 @@ function RegisterPage() {
           </div>
 
           <form className="space-y-4" onSubmit={onSubmit}>
+            {/* Condomínio Selection */}
+            <div className="space-y-1.5">
+              <Label htmlFor="condominio" className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-emerald-400" />
+                Seu Condomínio *
+              </Label>
+              {loadingCondos ? (
+                <div className="h-12 rounded-xl glass-input px-3.5 py-3 text-xs text-slate-400 flex items-center">
+                  Carregando condomínios...
+                </div>
+              ) : (
+                <Select
+                  value={form.condominioId}
+                  onValueChange={(val) => setForm((f) => ({ ...f, condominioId: val }))}
+                >
+                  <SelectTrigger className="h-12 w-full rounded-xl glass-input text-slate-100 border border-white/12">
+                    <SelectValue placeholder="Selecione seu condomínio" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border border-white/10 text-slate-200">
+                    {condominios.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>
+                        {c.name} — {c.address}
+                      </SelectItem>
+                    ))}
+                    {condominios.length === 0 && (
+                      <SelectItem value="none" disabled>
+                        Nenhum condomínio cadastrado
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="nome" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
                 Nome completo
@@ -147,7 +213,7 @@ function RegisterPage() {
             <div className="pt-2">
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !form.condominioId}
                 className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-sm font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
               >
                 {loading ? "Enviando solicitação..." : "Enviar Solicitação de Cadastro"}
