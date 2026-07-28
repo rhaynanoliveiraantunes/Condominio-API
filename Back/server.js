@@ -7,6 +7,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import purchaseRoutes from "./routes/purchasesRoutes.js";
+import condominioRoutes from "./routes/condominioRoutes.js";
 import purchasesController from "./controllers/purchasesController.js";
 
 import notFound from "./middlewares/notFound.js";
@@ -27,6 +28,8 @@ app.get("/exportar-acervo", purchasesController.exportAcervoXML);
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
 app.use('/purchases', purchaseRoutes);
+app.use('/condominios', condominioRoutes);
+
 app.use(notFound);
 app.use(errorHandler);
 

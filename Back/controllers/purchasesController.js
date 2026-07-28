@@ -5,7 +5,9 @@ import xml2js from "xml2js";
 
 const getPurchase = async (req, res) => {
     try {
-        const purchases = await purchasesService.listActivePurchases();
+        const condominioId = req.user?.condominioId;
+        const role = req.user?.role;
+        const purchases = await purchasesService.listActivePurchases(condominioId, role);
         res.status(200).json(purchases);
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -16,10 +18,12 @@ const create = async (req, res) => {
     try {
         const purchaseData = req.body; 
         const userId = req.user.id;
+        const condominioId = req.user.role === 'SUPER_ADMIN' ? (req.body.condominioId || req.user.condominioId) : req.user.condominioId;
 
         const newPurchase = await purchasesService.createPurchase(
             purchaseData,
-            userId
+            userId,
+            condominioId
         );
         res.status(201).json(newPurchase);
     } catch (error) {
@@ -31,9 +35,12 @@ const getId = async (req, res) => {
     try {
         const purchase = await Purchase.findById(req.params.id);
         if (purchase) {
+            if (req.user.role !== 'SUPER_ADMIN' && req.user.condominioId && purchase.condominioId.toString() !== req.user.condominioId.toString()) {
+                return res.status(400).json({ error: "Acesso negado a compras de outro condomínio" });
+            }
             res.status(200).json(purchase);
         } else {
-            res.status(400).json({ error: "Purchase not found" });
+            res.status(400).json({ error: "Compra não encontrada" });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -44,7 +51,9 @@ const update = async (req, res) => {
     try {
         const purchase = await purchasesService.editPurchase(
             req.params.id,
-            req.body
+            req.body,
+            req.user.condominioId,
+            req.user.role
         );
 
         if (purchase) {
@@ -62,7 +71,11 @@ const update = async (req, res) => {
 
 const cancel = async (req, res) => {
     try {
-        const purchase = await purchasesService.cancelPurchase(req.params.id);
+        const purchase = await purchasesService.cancelPurchase(
+            req.params.id,
+            req.user.condominioId,
+            req.user.role
+        );
         if (purchase) {
             res.status(200).json({
                 message: "Compra cancelada com sucesso", 
@@ -86,7 +99,9 @@ const joinPur = async (req, res) => {
             const result = await purchasesService.joinPurchase(
                 purchaseId,
                 userId,
-                amount
+                amount,
+                req.user.condominioId,
+                req.user.role
             );
 
             res.status(200).json(result);
@@ -107,7 +122,9 @@ const deleteJoin = async (req, res) => {
 
         const result = await purchasesService.leavePurchase(
             purchaseId,
-            userId
+            userId,
+            req.user.condominioId,
+            req.user.role
         );
 
         res.status(200).json(result);
@@ -127,7 +144,11 @@ const rankJoin = async (req, res) => {
 
 const exportAcervoXML = async (req, res) => {
     try {
-        const purchases = await Purchase.find().lean();
+        const filter = (req.user?.role === 'SUPER_ADMIN' || !req.user?.condominioId)
+            ? {}
+            : { condominioId: req.user.condominioId };
+
+        const purchases = await Purchase.find(filter).lean();
 
         const plainPurchases = purchases.map((p) => ({
             id: p._id ? p._id.toString() : "",
@@ -138,6 +159,7 @@ const exportAcervoXML = async (req, res) => {
             currentQuantity: p.currentQuantity || 0,
             term: p.term ? new Date(p.term).toISOString() : "",
             status: p.status || "",
+            condominioId: p.condominioId ? p.condominioId.toString() : "",
             createdBy: p.createdBy ? p.createdBy.toString() : "",
             createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : "",
             updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : ""

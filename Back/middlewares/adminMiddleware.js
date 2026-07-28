@@ -1,9 +1,10 @@
 const adminMiddleware = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+    const allowed = ['SUPER_ADMIN', 'SYNDIC', 'admin'];
+    if (req.user && allowed.includes(req.user.role)) {
         next();
     } else {
         return res.status(400).json({ 
-            error: 'Access denied. Permission restricted to administrators.' 
+            error: 'Access denied. Permission restricted to administrators or syndics.' 
         });
     }
 };
