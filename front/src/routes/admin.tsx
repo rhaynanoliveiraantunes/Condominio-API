@@ -23,6 +23,7 @@ import { formatBRL, formatDateTime } from "@/lib/format";
 import { useAuth, isSuperAdmin, isSyndic, type User, type CondominioItem } from "@/lib/auth";
 import type { Purchase } from "@/components/PurchaseCard";
 
+// Super Admin & Syndic Management Dashboard - CondomínioBuy Multi-Tenant
 export const Route = createFileRoute("/admin")({
   head: () => ({ meta: [{ title: "Painel administrativo — CondomínioBuy" }] }),
   component: () => (
