@@ -4,7 +4,15 @@ const create = async (req, res) => {
     try {
         if (req.user && req.user.role === 'SUPER_ADMIN') {
             const condominio = await condominioService.createCondominio(req.body);
-            return res.status(201).json(condominio);
+            return res.status(201).json({
+                message: "Condomínio cadastrado com sucesso",
+                condominio: {
+                    _id: condominio._id,
+                    name: condominio.name,
+                    address: condominio.address,
+                    createdAt: condominio.createdAt
+                }
+            });
         } else {
             return res.status(400).json({ error: "Apenas SUPER_ADMIN pode cadastrar condomínios." });
         }
