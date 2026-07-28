@@ -29,16 +29,29 @@ export function toDatetimeLocalMin(): string {
 
 export function statusLabel(status: string | undefined): string {
   switch (status) {
+    case "OPEN":
     case "active":
-      return "Ativa";
+      return "Aberta para Adesão";
+    case "MINIMUM_REACHED":
     case "goal_reached":
-      return "Concluída";
+      return "Meta Atingida";
     case "closed":
       return "Encerrada";
+    case "CANCELLED":
     case "cancelled":
       return "Cancelada";
     case "expired":
       return "Expirada";
+    case "PENDING_PIX":
+      return "Pagar via PIX";
+    case "PAID_VERIFYING":
+      return "Aguardando Síndico";
+    case "CONFIRMED":
+      return "Pagamento Confirmado";
+    case "REFUND_PENDING":
+      return "Reembolso Pendente";
+    case "REFUNDED":
+      return "Reembolsado";
     default:
       return status ?? "-";
   }

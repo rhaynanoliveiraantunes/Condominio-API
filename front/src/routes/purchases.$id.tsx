@@ -2,14 +2,57 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useState } from "react";
-import { ArrowLeft, Users, Calendar, DollarSign, Plus, Minus, CheckCircle, AlertCircle, ShoppingBag } from "lucide-react";
+import {
+  ArrowLeft,
+  Users,
+  Calendar,
+  DollarSign,
+  Plus,
+  Minus,
+  CheckCircle2,
+  AlertCircle,
+  ShoppingBag,
+  QrCode,
+  Copy,
+  Clock,
+  Ban,
+  RefreshCw,
+  Check,
+} from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { api, apiErrorMessage } from "@/lib/api";
 import { formatBRL, formatDateTime } from "@/lib/format";
-import { useAuth, currentUserId } from "@/lib/auth";
+import { useAuth, currentUserId, isSyndic, isSuperAdmin } from "@/lib/auth";
 import { getProductImageUrl, handleProductImageError } from "@/lib/images";
+
+type ParticipationItem = {
+  _id: string;
+  purchaseId: string;
+  userId: {
+    _id: string;
+    name: string;
+    apartment: string;
+    email: string;
+  };
+  amount: number;
+  paid: boolean;
+  paymentStatus: "PENDING_PIX" | "PAID_VERIFYING" | "CONFIRMED" | "REFUND_PENDING" | "REFUNDED";
+  receiptDetails?: string;
+  userPixKey?: string;
+  createdAt: string;
+};
 
 type PurchaseDetail = {
   _id: string;
@@ -20,10 +63,9 @@ type PurchaseDetail = {
   currentQuantity: number;
   term: string;
   status: string;
+  syndicPixKey?: string;
   createdBy?: string;
-  participants?: Array<
-    string | { _id?: string; user?: string; userId?: string }
-  >;
+  myParticipation?: ParticipationItem;
 };
 
 export const Route = createFileRoute("/purchases/$id")({
@@ -40,54 +82,109 @@ function PurchaseDetailPage() {
   const router = useRouter();
   const qc = useQueryClient();
   const { user } = useAuth();
-  const uid = currentUserId(user);
+  const canManage = isSyndic(user) || isSuperAdmin(user);
+
   const [busy, setBusy] = useState(false);
   const [amount, setAmount] = useState(1);
+  const [receiptDetails, setReceiptDetails] = useState("");
+  const [userPixKey, setUserPixKey] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["purchase", id],
     queryFn: async () => (await api.get<PurchaseDetail>(`/purchases/${id}`)).data,
   });
 
-  const participants = data?.participants ?? [];
-  const alreadyIn = participants.some((p) => {
-    if (typeof p === "string") return p === uid;
-    return p?._id === uid || p?.user === uid || p?.userId === uid;
+  const { data: participantsData, isLoading: loadingParticipants } = useQuery({
+    queryKey: ["purchase", id, "participants"],
+    queryFn: async () => (await api.get<ParticipationItem[]>(`/purchases/${id}/participants`)).data,
+    enabled: canManage,
   });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["purchase", id] });
+    qc.invalidateQueries({ queryKey: ["purchase", id, "participants"] });
     qc.invalidateQueries({ queryKey: ["purchases", "active"] });
   };
 
-  const join = async () => {
+  const myPart = data?.myParticipation;
+
+  const participate = async () => {
     setBusy(true);
     try {
-      await api.post(
-        `/purchases/${id}/join`,
-        { amount: Number(amount) },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      toast.success("Participação confirmada com sucesso!");
+      await api.post(`/purchases/${id}/participate`, { amount: Number(amount) });
+      toast.success("Participação registrada! Realize o pagamento via PIX.");
       invalidate();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Não foi possível participar."));
+      toast.error(apiErrorMessage(err, "Não foi possível registrar a participação."));
     } finally {
       setBusy(false);
     }
   };
 
-  const leave = async () => {
+  const markPaid = async () => {
+    if (!myPart?._id) return;
     setBusy(true);
     try {
-      await api.delete(`/purchases/${id}/join`);
-      toast.success("Participação cancelada.");
+      await api.patch(`/participations/${myPart._id}/pay`, {
+        receiptDetails: receiptDetails.trim(),
+        userPixKey: userPixKey.trim(),
+      });
+      toast.success("Aviso de pagamento enviado! Aguardando verificação do síndico.");
       invalidate();
     } catch (err) {
-      toast.error(apiErrorMessage(err, "Não foi possível cancelar a participação."));
+      toast.error(apiErrorMessage(err, "Não foi possível informar o pagamento."));
     } finally {
       setBusy(false);
     }
+  };
+
+  const confirmPix = async (partId: string) => {
+    setBusy(true);
+    try {
+      await api.patch(`/participations/${partId}/confirm`);
+      toast.success("Pagamento PIX confirmado com sucesso!");
+      invalidate();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Não foi possível confirmar o pagamento."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const cancelPurchase = async () => {
+    if (!window.confirm("Deseja realmente cancelar esta compra coletiva? Participações pagas serão movidas para Reembolso Pendente.")) return;
+    setBusy(true);
+    try {
+      await api.patch(`/purchases/${id}/cancel`);
+      toast.success("Compra cancelada. Participações movidas para Reembolso Pendente.");
+      invalidate();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Não foi possível cancelar a compra."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const confirmRefund = async (partId: string) => {
+    setBusy(true);
+    try {
+      await api.patch(`/participations/${partId}/refund`);
+      toast.success("Reembolso marcado como concluído!");
+      invalidate();
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Não foi possível atualizar o reembolso."));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyPixKey = (key?: string) => {
+    if (!key) return;
+    navigator.clipboard.writeText(key);
+    setCopied(true);
+    toast.success("Chave PIX copiada para a área de transferência!");
+    setTimeout(() => setCopied(false), 2500);
   };
 
   if (isLoading) {
@@ -111,7 +208,12 @@ function PurchaseDetailPage() {
   const min = Math.max(1, data.minimumQuantity || 1);
   const cur = data.currentQuantity ?? 0;
   const pct = Math.min(100, Math.round((cur / min) * 100));
-  const isActive = data.status === "active";
+  const isOpen = data.status === "OPEN" || data.status === "active" || data.status === "MINIMUM_REACHED";
+  const isCancelled = data.status === "CANCELLED" || data.status === "cancelled";
+  const syndicPix = data.syndicPixKey || "sindico@condominiobuy.com.br";
+
+  const participantsList = participantsData ?? [];
+  const pendingRefunds = participantsList.filter((p) => p.paymentStatus === "REFUND_PENDING");
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -149,8 +251,19 @@ function PurchaseDetailPage() {
               )}
             </div>
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex flex-col items-end gap-2">
             <StatusBadge status={data.status} className="text-sm px-3.5 py-1.5" />
+            {canManage && !isCancelled && (
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={busy}
+                onClick={cancelPurchase}
+                className="rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Ban className="h-3.5 w-3.5" /> Cancelar Compra
+              </Button>
+            )}
           </div>
         </div>
 
@@ -199,30 +312,17 @@ function PurchaseDetailPage() {
           </div>
         </div>
 
-        {/* Action / Participation Section */}
-        <div className="mt-8 border-t border-white/10 pt-8">
-          {isActive ? (
-            alreadyIn ? (
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 space-y-4">
-                <div className="flex items-center gap-3 text-emerald-300 font-semibold">
-                  <CheckCircle className="h-6 w-6 text-emerald-400 shrink-0" />
-                  <div>
-                    <p className="text-base font-bold text-white">Você já está participando desta compra!</p>
-                    <p className="text-xs text-emerald-300/80">Sua unidade está contabilizada na meta coletiva.</p>
-                  </div>
-                </div>
-                <Button
-                  variant="destructive"
-                  className="w-full sm:w-auto rounded-xl font-semibold bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30"
-                  disabled={busy}
-                  onClick={leave}
-                >
-                  {busy ? "Processando..." : "Cancelar minha participação"}
-                </Button>
-              </div>
-            ) : (
+        {/* RESIDENT CHECKOUT & PIX SECTION */}
+        <div className="mt-8 border-t border-white/10 pt-8 space-y-6">
+          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+            <QrCode className="h-5 w-5 text-emerald-400" /> Pagamento e Adesão via PIX
+          </h2>
+
+          {isOpen ? (
+            !myPart ? (
+              /* Step 1: Select quantity & create participation */
               <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-md space-y-4">
-                <h3 className="text-lg font-bold text-white">Confirmar adesão</h3>
+                <h3 className="text-base font-bold text-white">1. Selecione a quantidade</h3>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
                   <div className="space-y-2">
                     <label htmlFor="amount" className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -258,7 +358,7 @@ function PurchaseDetailPage() {
                   </div>
 
                   <div className="flex-1 space-y-1">
-                    <span className="text-xs text-slate-400 block">Total estimado:</span>
+                    <span className="text-xs text-slate-400 block">Total a pagar:</span>
                     <span className="text-2xl font-extrabold gradient-text-emerald">
                       {formatBRL(amount * data.unitPrice)}
                     </span>
@@ -267,11 +367,119 @@ function PurchaseDetailPage() {
                   <Button
                     className="w-full sm:w-auto h-12 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 px-8 text-base font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.02] transition-all"
                     disabled={busy || amount < 1}
-                    onClick={join}
+                    onClick={participate}
                   >
-                    {busy ? "Confirmando..." : "Quero Participar Agora"}
+                    {busy ? "Gerando PIX..." : "Gerar Dados do PIX"}
                   </Button>
                 </div>
+              </div>
+            ) : (
+              /* Step 2: PIX Key display & Pay confirmation */
+              <div className="rounded-2xl border border-emerald-500/30 bg-slate-900/80 p-6 sm:p-8 space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-bold text-white">Sua Adesão</h3>
+                      <StatusBadge status={myPart.paymentStatus} />
+                    </div>
+                    <p className="text-xs text-slate-300">
+                      Quantidade: <span className="font-bold text-white">{myPart.amount} un</span> | Total:{" "}
+                      <span className="font-bold text-emerald-400">{formatBRL(myPart.amount * data.unitPrice)}</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* PIX Key Box */}
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-bold text-emerald-300 flex items-center gap-1.5">
+                      <QrCode className="h-4 w-4 text-emerald-400" /> Chave PIX do Síndico
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => copyPixKey(syndicPix)}
+                      className="rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold gap-1.5"
+                    >
+                      {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copied ? "Copiado!" : "Copiar Chave PIX"}
+                    </Button>
+                  </div>
+                  <div className="font-mono text-sm font-bold text-white bg-slate-950/80 p-3 rounded-lg border border-white/10 select-all break-all">
+                    {syndicPix}
+                  </div>
+                </div>
+
+                {/* Pay Form if PENDING_PIX */}
+                {myPart.paymentStatus === "PENDING_PIX" && (
+                  <div className="space-y-4 border-t border-white/10 pt-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="receipt" className="text-xs uppercase font-semibold text-slate-300">
+                        Comprovante / ID da Transação (opcional)
+                      </Label>
+                      <Input
+                        id="receipt"
+                        value={receiptDetails}
+                        onChange={(e) => setReceiptDetails(e.target.value)}
+                        placeholder="Ex: ID 123456789 ou link do comprovante"
+                        className="h-11 rounded-xl glass-input text-sm text-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="userPix" className="text-xs uppercase font-semibold text-slate-300">
+                        Sua Chave PIX (para eventuais reembolsos)
+                      </Label>
+                      <Input
+                        id="userPix"
+                        value={userPixKey}
+                        onChange={(e) => setUserPixKey(e.target.value)}
+                        placeholder="Ex: Seu CPF, E-mail ou Telefone"
+                        className="h-11 rounded-xl glass-input text-sm text-white"
+                      />
+                    </div>
+
+                    <Button
+                      onClick={markPaid}
+                      disabled={busy}
+                      className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-sm font-extrabold text-slate-950 shadow-lg shadow-emerald-500/25"
+                    >
+                      {busy ? "Confirmando..." : "Já fiz o PIX (Notificar Síndico)"}
+                    </Button>
+                  </div>
+                )}
+
+                {myPart.paymentStatus === "PAID_VERIFYING" && (
+                  <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-4 text-xs text-sky-300 flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-sky-400 shrink-0" />
+                    <span>Pagamento informado! O síndico conferirá o valor e confirmará sua vaga na compra.</span>
+                  </div>
+                )}
+
+                {myPart.paymentStatus === "CONFIRMED" && (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-xs text-emerald-300 flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+                    <span>Pagamento verificado e confirmado pelo síndico! Você está garantido na compra coletiva.</span>
+                  </div>
+                )}
+
+                {myPart.paymentStatus === "REFUND_PENDING" && (
+                  <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 text-xs text-orange-300 flex items-center gap-3">
+                    <RefreshCw className="h-5 w-5 text-orange-400 shrink-0 animate-spin" />
+                    <div>
+                      <p className="font-bold text-white text-sm">Reembolso em Processamento</p>
+                      <p className="mt-0.5">
+                        Esta compra foi cancelada. O síndico realizará a devolução do seu PIX em breve.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {myPart.paymentStatus === "REFUNDED" && (
+                  <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-xs text-purple-300 flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-purple-400 shrink-0" />
+                    <span>Reembolso concluído com sucesso pelo síndico!</span>
+                  </div>
+                )}
               </div>
             )
           ) : (
@@ -280,6 +488,129 @@ function PurchaseDetailPage() {
             </div>
           )}
         </div>
+
+        {/* SYNDIC / SUPER ADMIN: PARTICIPANTS TABLE & REFUNDS SECTION */}
+        {canManage && (
+          <div className="mt-10 border-t border-white/10 pt-8 space-y-8">
+            <div>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2 mb-4">
+                <Users className="h-5 w-5 text-emerald-400" /> Tabela de Participantes & Validação de PIX
+              </h2>
+
+              <div className="overflow-hidden rounded-3xl glass-panel border border-white/10">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-slate-900/90 border-b border-white/10">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400 py-4">Morador</TableHead>
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Apto</TableHead>
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Qtd</TableHead>
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Total (R$)</TableHead>
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Status do PIX</TableHead>
+                        <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400 text-right pr-6">Ação do Síndico</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {participantsList.map((p) => (
+                        <TableRow key={p._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <TableCell className="font-bold text-white py-4">
+                            {p.userId?.name ?? "Morador"}
+                            {p.receiptDetails && (
+                              <span className="block text-[11px] font-normal text-slate-400">
+                                Comprovante: {p.receiptDetails}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-slate-300 font-semibold">{p.userId?.apartment ?? "-"}</TableCell>
+                          <TableCell className="text-slate-200 font-bold">{p.amount}</TableCell>
+                          <TableCell className="text-emerald-400 font-extrabold">
+                            {formatBRL(p.amount * data.unitPrice)}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={p.paymentStatus} />
+                          </TableCell>
+                          <TableCell className="text-right pr-6">
+                            {p.paymentStatus === "PAID_VERIFYING" && (
+                              <Button
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => confirmPix(p._id)}
+                                className="rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold"
+                              >
+                                Aprovar PIX
+                              </Button>
+                            )}
+                            {p.paymentStatus === "REFUND_PENDING" && (
+                              <Button
+                                size="sm"
+                                disabled={busy}
+                                onClick={() => confirmRefund(p._id)}
+                                className="rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-300 hover:bg-orange-500/30 text-xs font-bold"
+                              >
+                                Confirmar Reembolso
+                              </Button>
+                            )}
+                            {p.paymentStatus === "CONFIRMED" && (
+                              <span className="text-xs font-semibold text-emerald-400">Verificado ✓</span>
+                            )}
+                            {p.paymentStatus === "REFUNDED" && (
+                              <span className="text-xs font-semibold text-purple-400">Devolvido ✓</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {participantsList.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="py-8 text-center text-slate-400">
+                            Nenhuma participação registrada nesta compra até o momento.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+
+            {/* PENDING REFUNDS SECTION */}
+            {pendingRefunds.length > 0 && (
+              <div className="rounded-2xl border border-orange-500/30 bg-orange-500/10 p-6 space-y-4">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5 text-orange-400" /> Reembolsos Pendentes ({pendingRefunds.length})
+                </h3>
+                <p className="text-xs text-orange-300">
+                  Devolva o valor aos moradores abaixo e clique em "Confirmar Reembolso" para atualizar o status.
+                </p>
+
+                <div className="space-y-3">
+                  {pendingRefunds.map((pr) => (
+                    <div key={pr._id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl bg-slate-950 p-4 border border-white/10">
+                      <div>
+                        <p className="font-bold text-white text-sm">{pr.userId?.name} (Apto {pr.userId?.apartment})</p>
+                        <p className="text-xs text-slate-400">
+                          Valor a Devolver: <span className="font-bold text-emerald-400">{formatBRL(pr.amount * data.unitPrice)}</span>
+                          {pr.userPixKey && (
+                            <span className="block text-slate-300 font-mono mt-0.5">
+                              Chave PIX do Morador: {pr.userPixKey}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => confirmRefund(pr._id)}
+                        className="rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-300 hover:bg-orange-500/30 text-xs font-bold"
+                      >
+                        Confirmar Reembolso
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

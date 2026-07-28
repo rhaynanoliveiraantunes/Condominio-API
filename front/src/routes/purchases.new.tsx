@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { PackagePlus, Sparkles, DollarSign, Hash, Calendar, FileText } from "lucide-react";
+import { PackagePlus, Sparkles, DollarSign, Hash, Calendar, FileText, QrCode } from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ function NewPurchase() {
     unitPrice: "",
     minimumQuantity: "",
     term: "",
+    syndicPixKey: "",
   });
 
   const minDate = toDatetimeLocalMin();
@@ -50,6 +51,11 @@ function NewPurchase() {
       toast.error("Informe um valor e quantidade mínima válidos.");
       return;
     }
+    if (!form.syndicPixKey.trim()) {
+      toast.error("Informe a Chave PIX para recebimento.");
+      return;
+    }
+
     setLoading(true);
     try {
       await api.post("/purchases", {
@@ -58,6 +64,7 @@ function NewPurchase() {
         unitPrice: valor,
         minimumQuantity: qtd,
         term: prazoDate.toISOString(),
+        syndicPixKey: form.syndicPixKey.trim(),
       });
       toast.success("Compra coletiva criada com sucesso!");
       router.navigate({ to: "/" });
@@ -161,6 +168,21 @@ function NewPurchase() {
               className="h-12 rounded-xl glass-input text-base text-white placeholder:text-slate-500"
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="syndicPixKey" className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <QrCode className="h-4 w-4 text-emerald-400" />
+            Chave PIX do Síndico (para Recebimentos) *
+          </Label>
+          <Input
+            id="syndicPixKey"
+            required
+            value={form.syndicPixKey}
+            onChange={set("syndicPixKey")}
+            placeholder="Ex: 11999998888, sindico@condominiobuy.com ou chave aleatória"
+            className="h-12 rounded-xl glass-input text-base text-white placeholder:text-slate-500"
+          />
         </div>
 
         <div className="space-y-2">
