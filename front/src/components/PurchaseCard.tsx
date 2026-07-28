@@ -3,6 +3,7 @@ import { Clock, Users, ArrowUpRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { StatusBadge } from "./StatusBadge";
 import { formatBRL, formatDateTime } from "@/lib/format";
+import { getProductImageUrl, handleProductImageError } from "@/lib/images";
 
 export type Purchase = {
   _id: string;
@@ -31,17 +32,27 @@ export function PurchaseCard({ purchase }: { purchase: Purchase }) {
       <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-emerald-500/10 blur-2xl transition-all duration-500 group-hover:bg-emerald-500/20" />
 
       <div>
-        {/* Header: Title + Status */}
+        {/* Header: Dynamic Image Thumbnail + Title + Status */}
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-xl font-bold tracking-tight text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-1">
-              {purchase.product}
-            </h3>
-            {purchase.description && (
-              <p className="mt-1 text-sm text-slate-400 line-clamp-2 leading-relaxed">
-                {purchase.description}
-              </p>
-            )}
+          <div className="flex items-start gap-3.5 min-w-0 flex-1">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-md">
+              <img
+                src={getProductImageUrl(purchase.product)}
+                alt={purchase.product}
+                onError={handleProductImageError}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-xl font-bold tracking-tight text-slate-100 group-hover:text-emerald-300 transition-colors line-clamp-1">
+                {purchase.product}
+              </h3>
+              {purchase.description && (
+                <p className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                  {purchase.description}
+                </p>
+              )}
+            </div>
           </div>
           <StatusBadge status={purchase.status} />
         </div>

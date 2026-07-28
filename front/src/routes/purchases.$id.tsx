@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { api, apiErrorMessage } from "@/lib/api";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { useAuth, currentUserId } from "@/lib/auth";
+import { getProductImageUrl, handleProductImageError } from "@/lib/images";
 
 type PurchaseDetail = {
   _id: string;
@@ -126,17 +127,27 @@ function PurchaseDetailPage() {
       <div className="relative overflow-hidden rounded-3xl glass-panel p-6 sm:p-10">
         <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-emerald-500/15 blur-3xl pointer-events-none" />
 
-        {/* Title Header & Status */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-white/10 pb-6">
-          <div className="space-y-1">
-            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              {data.product}
-            </h1>
-            {data.description && (
-              <p className="text-base text-slate-300 leading-relaxed max-w-2xl pt-1">
-                {data.description}
-              </p>
-            )}
+        {/* Title Header & Status with Image Thumbnail */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/10 pb-6">
+          <div className="flex items-start gap-4">
+            <div className="relative h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl">
+              <img
+                src={getProductImageUrl(data.product)}
+                alt={data.product}
+                onError={handleProductImageError}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                {data.product}
+              </h1>
+              {data.description && (
+                <p className="text-base text-slate-300 leading-relaxed max-w-2xl pt-1">
+                  {data.description}
+                </p>
+              )}
+            </div>
           </div>
           <div className="shrink-0">
             <StatusBadge status={data.status} className="text-sm px-3.5 py-1.5" />
