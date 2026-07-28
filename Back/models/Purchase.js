@@ -26,8 +26,13 @@ const purchaseSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'goal_reached', 'closed', 'cancelled', 'expired'],
-        default: 'active'
+        enum: ['OPEN', 'MINIMUM_REACHED', 'CANCELLED', 'active', 'goal_reached', 'closed', 'expired'],
+        default: 'OPEN'
+    },
+    syndicPixKey: {
+        type: String,
+        required: true,
+        default: "sindico@condominiobuy.com.br"
     },
     condoId: {
         type: mongoose.Schema.Types.ObjectId,

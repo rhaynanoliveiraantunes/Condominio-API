@@ -1,5 +1,6 @@
 import purchasesService from "../services/purchasesService.js";
 import Purchase from "../models/Purchase.js";
+import Participation from "../models/Participation.js";
 import Ranking from "../models/Ranking.js";
 import xml2js from "xml2js";
 
@@ -38,12 +39,98 @@ const getId = async (req, res) => {
             if (req.user.role !== 'SUPER_ADMIN' && req.user.condoId && purchase.condoId.toString() !== req.user.condoId.toString()) {
                 return res.status(400).json({ error: "Acesso negado a compras de outro condomínio" });
             }
-            res.status(200).json(purchase);
+            // Fetch user's participation if exists
+            const myParticipation = await Participation.findOne({ purchaseId: purchase._id, userId: req.user.id });
+            const purchaseObj = purchase.toObject();
+            if (myParticipation) {
+                purchaseObj.myParticipation = myParticipation;
+            }
+            res.status(200).json(purchaseObj);
         } else {
             res.status(400).json({ error: "Compra não encontrada" });
         }
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+};
+
+const participate = async (req, res) => {
+    try {
+        const purchaseId = req.params.id;
+        const userId = req.user.id;
+        const { amount } = req.body;
+
+        if (!amount || amount <= 0) {
+            return res.status(400).json({ error: "Quantidade inválida" });
+        }
+
+        const result = await purchasesService.participatePurchase(
+            purchaseId,
+            userId,
+            amount,
+            req.user.condoId,
+            req.user.role
+        );
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const pay = async (req, res) => {
+    try {
+        const participationId = req.params.id;
+        const userId = req.user.id;
+        const { receiptDetails, userPixKey } = req.body;
+
+        const result = await purchasesService.markPaid(
+            participationId,
+            userId,
+            receiptDetails,
+            userPixKey
+        );
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const confirm = async (req, res) => {
+    try {
+        const participationId = req.params.id;
+        const result = await purchasesService.confirmPayment(
+            participationId,
+            req.user
+        );
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const refund = async (req, res) => {
+    try {
+        const participationId = req.params.id;
+        const result = await purchasesService.refundParticipation(
+            participationId,
+            req.user
+        );
+        res.status(200).json(result);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const getParticipants = async (req, res) => {
+    try {
+        const purchaseId = req.params.id;
+        const participants = await purchasesService.listParticipants(
+            purchaseId,
+            req.user
+        );
+        res.status(200).json(participants);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
     }
 };
 
@@ -71,48 +158,19 @@ const update = async (req, res) => {
 
 const cancel = async (req, res) => {
     try {
-        const purchase = await purchasesService.cancelPurchase(
+        const purchase = await purchasesService.cancelPurchaseWithRefunds(
             req.params.id,
             req.user.condoId,
             req.user.role
         );
-        if (purchase) {
-            res.status(200).json({
-                message: "Compra cancelada com sucesso", 
-                purchase
-            });
-        } else {
-            res.status(400).json({ error: "Não foi possível cancelar a compra" });
-        }
+        res.status(200).json(purchase);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 };
 
 const joinPur = async (req, res) => {
-    try {
-        const purchaseId = req.params.id;
-        const userId = req.user.id;
-        const { amount } = req.body;
-
-        if (amount && amount > 0) {
-            const result = await purchasesService.joinPurchase(
-                purchaseId,
-                userId,
-                amount,
-                req.user.condoId,
-                req.user.role
-            );
-
-            res.status(200).json(result);
-        } else {
-            return res.status(400).json({
-                error: "Quantidade inválida",
-            });
-        }
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
+    return participate(req, res);
 };
 
 const deleteJoin = async (req, res) => {
@@ -159,6 +217,7 @@ const exportAcervoXML = async (req, res) => {
             currentQuantity: p.currentQuantity || 0,
             term: p.term ? new Date(p.term).toISOString() : "",
             status: p.status || "",
+            syndicPixKey: p.syndicPixKey || "",
             condoId: p.condoId ? p.condoId.toString() : "",
             createdBy: p.createdBy ? p.createdBy.toString() : "",
             createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : "",
@@ -180,6 +239,11 @@ export default {
     getPurchase,
     create,
     getId,
+    participate,
+    pay,
+    confirm,
+    refund,
+    getParticipants,
     update,
     cancel,
     joinPur,

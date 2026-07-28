@@ -9,6 +9,8 @@ import userRoutes from "./routes/userRoutes.js";
 import purchaseRoutes from "./routes/purchasesRoutes.js";
 import condoRoutes from "./routes/condoRoutes.js";
 import purchasesController from "./controllers/purchasesController.js";
+import authMiddleware from "./middlewares/authMiddleware.js";
+import adminMiddleware from "./middlewares/adminMiddleware.js";
 
 import notFound from "./middlewares/notFound.js";
 import errorHandler from "./middlewares/errorHandler.js";
@@ -24,6 +26,11 @@ app.get("/", (req, res) => {
 });
 
 app.get("/exportar-acervo", purchasesController.exportAcervoXML);
+
+// Direct participation PIX & refund routes
+app.patch("/participations/:id/pay", authMiddleware, purchasesController.pay);
+app.patch("/participations/:id/confirm", authMiddleware, adminMiddleware, purchasesController.confirm);
+app.patch("/participations/:id/refund", authMiddleware, adminMiddleware, purchasesController.refund);
 
 app.use('/auth', authRoutes);
 app.use('/users', userRoutes);
