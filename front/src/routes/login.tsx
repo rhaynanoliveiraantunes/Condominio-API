@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, Mail, Lock, ArrowRight } from "lucide-react";
+import { Sparkles, Mail, Lock, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,7 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pendingUserAlert, setPendingUserAlert] = useState(false);
 
   useEffect(() => {
     if (ready && token) router.navigate({ to: "/" });
@@ -27,13 +28,14 @@ function LoginPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setPendingUserAlert(false);
     try {
       const user = await login(email, senha);
       if (user.active === false) {
-        toast.warning("Sua conta aguarda aprovação do síndico.");
+        setPendingUserAlert(true);
+        toast.warning("Sua conta aguarda aprovação do síndico do seu condomínio.");
         window.localStorage.removeItem("cb_token");
         window.localStorage.removeItem("cb_user");
-        window.location.reload();
         return;
       }
       toast.success(`Bem-vindo(a), ${user.name ?? "morador"}!`);
@@ -41,7 +43,8 @@ function LoginPage() {
     } catch (err) {
       const msg = apiErrorMessage(err, "Não foi possível entrar.");
       if (msg.toLowerCase().includes("aprova") || msg.toLowerCase().includes("inativ")) {
-        toast.warning("Sua conta aguarda aprovação do síndico.");
+        setPendingUserAlert(true);
+        toast.warning("Sua conta aguarda aprovação do síndico do seu condomínio.");
       } else {
         toast.error(msg);
       }
@@ -72,12 +75,25 @@ function LoginPage() {
           </div>
         </div>
 
+        {/* Pending User Banner Alert */}
+        {pendingUserAlert && (
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs font-semibold text-amber-300 flex items-start gap-3 backdrop-blur-md">
+            <Clock className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-200 text-sm">Conta em Aguardo de Aprovação</p>
+              <p className="mt-0.5 text-amber-300/80 leading-relaxed">
+                Seu cadastro foi realizado com sucesso! O síndico do seu condomínio precisa aprovar seu acesso antes que você possa navegar na plataforma.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Card Form */}
         <div className="relative overflow-hidden rounded-3xl glass-panel p-8 sm:p-10 space-y-6">
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-white">Acesse sua conta</h2>
             <p className="text-xs text-slate-400">
-              Digite suas credenciais de morador para entrar na plataforma.
+              Digite suas credenciais para entrar no seu condomínio.
             </p>
           </div>
 
