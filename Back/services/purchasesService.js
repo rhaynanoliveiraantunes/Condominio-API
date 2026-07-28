@@ -3,10 +3,14 @@ import Ranking from "../models/Ranking.js";
 import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
-const createPurchase = async (purchaseData, userId) => {
+const createPurchase = async (purchaseData, userId, condominioId) => {
+    if (!condominioId) {
+        throw new Error("O condomínio é obrigatório para cadastrar uma compra.");
+    }
     if (new Date(purchaseData.term) >= new Date()) {
         const newPurchase = await Purchase.create({
             ...purchaseData,
+            condominioId,
             currentQuantity: 0,
             status: "active",
             createdBy: userId,
@@ -14,12 +18,16 @@ const createPurchase = async (purchaseData, userId) => {
 
         return newPurchase;
     } else {
-        throw new Error("The deadline cannot be a date in the past");
+        throw new Error("O prazo não pode ser uma data no passado.");
     }
 };
 
-const listActivePurchases = async () => {
-    const activePurchases = await Purchase.find({ status: "active" });
+const listActivePurchases = async (condominioId, userRole) => {
+    const filter = (userRole === 'SUPER_ADMIN' || !condominioId) 
+        ? { status: "active" } 
+        : { status: "active", condominioId };
+
+    const activePurchases = await Purchase.find(filter);
     const now = new Date();
 
     for (let purchase of activePurchases) {
@@ -33,14 +41,18 @@ const listActivePurchases = async () => {
         }
     }
 
-    return await Purchase.find({ status: "active" });
+    return await Purchase.find(filter);
 };
 
-const joinPurchase = async (purchaseId, userId, amount) => {
+const joinPurchase = async (purchaseId, userId, amount, userCondominioId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
-        throw new Error("Purchase not found");
+        throw new Error("Compra não encontrada.");
+    }
+
+    if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+        throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
     }
 
     if (purchase.status === "active") {
@@ -63,54 +75,66 @@ const joinPurchase = async (purchaseId, userId, amount) => {
                 { upsert: true, new: true }
             );
 
-            return { message: "Participation confirmed and payment made" };
+            return { message: "Participação confirmada e pagamento realizado." };
         } else {
-            throw new Error("The deadline for this purchase has passed");
+            throw new Error("O prazo para esta compra já expirou.");
         }
     } else {
-        throw new Error("This purchase no longer accepts new sign-ups");
+        throw new Error("Esta compra não aceita mais adesões.");
     }
 };
 
-const leavePurchase = async (purchaseId, userId) => {
+const leavePurchase = async (purchaseId, userId, userCondominioId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
-        throw new Error("Purchase not found");
+        throw new Error("Compra não encontrada.");
+    }
+
+    if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+        throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
     }
 
     if (purchase.status === "active") {
-        return { message: "Participation successfully cancelled" };
+        return { message: "Participação cancelada com sucesso." };
     } else {
         throw new Error(
-            "Participation cannot be cancelled once the purchase has closed"
+            "A participação não pode ser cancelada após o encerramento da compra."
         );
     }
 };
 
-const editPurchase = async (purchaseId, updateData) => {
+const editPurchase = async (purchaseId, updateData, userCondominioId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (purchase) {
+        if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+            throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
+        }
+
         Object.assign(purchase, updateData);
         await purchase.save();
 
         return purchase;
     } else {
-        throw new Error("Purchase not found");
+        throw new Error("Compra não encontrada.");
     }
 };
 
-const cancelPurchase = async (purchaseId) => {
+const cancelPurchase = async (purchaseId, userCondominioId, userRole) => {
     const purchase = await Purchase.findById(purchaseId);
 
     if (purchase) {
+        if (userRole !== 'SUPER_ADMIN' && userCondominioId && purchase.condominioId.toString() !== userCondominioId.toString()) {
+            throw new Error("Acesso negado. Esta compra pertence a outro condomínio.");
+        }
+
         purchase.status = "cancelled";
         await purchase.save();
 
         return purchase;
     } else {
-        throw new Error("Purchase not found");
+        throw new Error("Compra não encontrada.");
     }
 };
 

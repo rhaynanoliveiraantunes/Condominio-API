@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-
-
 const purchaseSchema = new mongoose.Schema({
     product: {
         type: String,
@@ -31,6 +29,11 @@ const purchaseSchema = new mongoose.Schema({
         enum: ['active', 'goal_reached', 'closed', 'cancelled', 'expired'],
         default: 'active'
     },
+    condominioId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Condominio',
+        required: true
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -39,5 +42,6 @@ const purchaseSchema = new mongoose.Schema({
 }, { 
     collection: "purchases",
     timestamps: true
- });
+});
+
 export default mongoose.model("Purchase", purchaseSchema);
