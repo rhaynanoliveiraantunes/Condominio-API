@@ -3,6 +3,31 @@ import Ranking from "../models/Ranking.js";
 import Purchase from "../models/Purchase.js";
 import Participation from "../models/Participation.js";
 
+const checkAndUpdateExpiredPurchases = async (condoId, userRole) => {
+    const filter = (userRole === 'SUPER_ADMIN' || !condoId)
+        ? { status: { $in: ["OPEN", "active"] } }
+        : { status: { $in: ["OPEN", "active"] }, condoId };
+
+    const candidatePurchases = await Purchase.find(filter);
+    const now = new Date();
+
+    for (let purchase of candidatePurchases) {
+        if (new Date(purchase.term) <= now) {
+            if (purchase.currentQuantity >= purchase.minimumQuantity) {
+                purchase.status = "MINIMUM_REACHED";
+            } else {
+                purchase.status = "CANCELLED";
+                // Trigger auto refund status for confirmed/verifying participations
+                await Participation.updateMany(
+                    { purchaseId: purchase._id, paymentStatus: { $in: ["CONFIRMED", "PAID_VERIFYING"] } },
+                    { paymentStatus: "REFUND_PENDING" }
+                );
+            }
+            await purchase.save();
+        }
+    }
+};
+
 const createPurchase = async (purchaseData, userId, condoId) => {
     if (!condoId) {
         throw new Error("O condomínio é obrigatório para cadastrar uma compra.");
@@ -24,33 +49,17 @@ const createPurchase = async (purchaseData, userId, condoId) => {
 };
 
 const listActivePurchases = async (condoId, userRole) => {
+    await checkAndUpdateExpiredPurchases(condoId, userRole);
+
     const filter = (userRole === 'SUPER_ADMIN' || !condoId) 
         ? { status: { $in: ["OPEN", "MINIMUM_REACHED", "active", "goal_reached"] } } 
         : { status: { $in: ["OPEN", "MINIMUM_REACHED", "active", "goal_reached"] }, condoId };
 
-    const activePurchases = await Purchase.find(filter);
-    const now = new Date();
-
-    for (let purchase of activePurchases) {
-        if (new Date(purchase.term) <= now) {
-            if (purchase.currentQuantity >= purchase.minimumQuantity) {
-                purchase.status = "MINIMUM_REACHED";
-            } else {
-                purchase.status = "CANCELLED";
-                // Trigger auto refund for expired failed purchases
-                await Participation.updateMany(
-                    { purchaseId: purchase._id, paymentStatus: { $in: ["CONFIRMED", "PAID_VERIFYING"] } },
-                    { paymentStatus: "REFUND_PENDING" }
-                );
-            }
-            await purchase.save();
-        }
-    }
-
-    return await Purchase.find(filter);
+    return await Purchase.find(filter).sort({ term: 1 });
 };
 
 const participatePurchase = async (purchaseId, userId, amount, userCondoId, userRole) => {
+    await checkAndUpdateExpiredPurchases(userCondoId, userRole);
     const purchase = await Purchase.findById(purchaseId);
 
     if (!purchase) {
@@ -135,7 +144,7 @@ const confirmPayment = async (participationId, currentUser) => {
     await participation.save();
 
     purchase.currentQuantity += participation.amount;
-    if (purchase.currentQuantity >= purchase.minimumQuantity && purchase.status === "OPEN") {
+    if (purchase.currentQuantity >= purchase.minimumQuantity && (purchase.status === "OPEN" || purchase.status === "active")) {
         purchase.status = "MINIMUM_REACHED";
     }
     await purchase.save();
@@ -221,6 +230,27 @@ const listParticipants = async (purchaseId, currentUser) => {
     return participations;
 };
 
+const listPendingRefunds = async (currentUser) => {
+    await checkAndUpdateExpiredPurchases(currentUser.condoId, currentUser.role);
+
+    const purchaseFilter = (currentUser.role === 'SUPER_ADMIN' || !currentUser.condoId)
+        ? {}
+        : { condoId: currentUser.condoId };
+
+    const condoPurchases = await Purchase.find(purchaseFilter).select("_id");
+    const purchaseIds = condoPurchases.map(p => p._id);
+
+    const pendingRefunds = await Participation.find({
+        purchaseId: { $in: purchaseIds },
+        paymentStatus: "REFUND_PENDING"
+    })
+        .populate("userId", "name apartment email")
+        .populate("purchaseId", "product unitPrice")
+        .sort({ updatedAt: -1 });
+
+    return pendingRefunds;
+};
+
 const joinPurchase = async (purchaseId, userId, amount, userCondoId, userRole) => {
     return await participatePurchase(purchaseId, userId, amount, userCondoId, userRole);
 };
@@ -256,6 +286,7 @@ const cancelPurchase = async (purchaseId, userCondoId, userRole) => {
 };
 
 export default {
+    checkAndUpdateExpiredPurchases,
     createPurchase,
     listActivePurchases,
     participatePurchase,
@@ -264,6 +295,7 @@ export default {
     cancelPurchaseWithRefunds,
     refundParticipation,
     listParticipants,
+    listPendingRefunds,
     joinPurchase,
     leavePurchase,
     editPurchase,

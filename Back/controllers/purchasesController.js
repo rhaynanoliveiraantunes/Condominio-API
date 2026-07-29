@@ -34,12 +34,12 @@ const create = async (req, res) => {
 
 const getId = async (req, res) => {
     try {
+        await purchasesService.checkAndUpdateExpiredPurchases(req.user?.condoId, req.user?.role);
         const purchase = await Purchase.findById(req.params.id);
         if (purchase) {
             if (req.user.role !== 'SUPER_ADMIN' && req.user.condoId && purchase.condoId.toString() !== req.user.condoId.toString()) {
                 return res.status(400).json({ error: "Acesso negado a compras de outro condomínio" });
             }
-            // Fetch user's participation if exists
             const myParticipation = await Participation.findOne({ purchaseId: purchase._id, userId: req.user.id });
             const purchaseObj = purchase.toObject();
             if (myParticipation) {
@@ -129,6 +129,15 @@ const getParticipants = async (req, res) => {
             req.user
         );
         res.status(200).json(participants);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const getRefunds = async (req, res) => {
+    try {
+        const refunds = await purchasesService.listPendingRefunds(req.user);
+        res.status(200).json(refunds);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -244,6 +253,7 @@ export default {
     confirm,
     refund,
     getParticipants,
+    getRefunds,
     update,
     cancel,
     joinPur,

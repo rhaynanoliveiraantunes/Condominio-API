@@ -28,6 +28,7 @@ app.get("/", (req, res) => {
 app.get("/exportar-acervo", purchasesController.exportAcervoXML);
 
 // Direct participation PIX & refund routes
+app.get("/participations/refunds", authMiddleware, adminMiddleware, purchasesController.getRefunds);
 app.patch("/participations/:id/pay", authMiddleware, purchasesController.pay);
 app.patch("/participations/:id/confirm", authMiddleware, adminMiddleware, purchasesController.confirm);
 app.patch("/participations/:id/refund", authMiddleware, adminMiddleware, purchasesController.refund);

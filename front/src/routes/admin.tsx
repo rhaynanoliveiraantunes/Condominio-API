@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
-import { ShieldCheck, Users, ShoppingBag, Sparkles, Building2, ShieldAlert } from "lucide-react";
+import {
+  ShieldCheck,
+  Users,
+  ShoppingBag,
+  Sparkles,
+  Building2,
+  ShieldAlert,
+  RefreshCw,
+  Copy,
+  Check,
+  QrCode,
+} from "lucide-react";
 import { ProtectedLayout } from "@/components/AppLayout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +33,26 @@ import { api, apiErrorMessage } from "@/lib/api";
 import { formatBRL, formatDateTime } from "@/lib/format";
 import { useAuth, isSuperAdmin, isSyndic, type User, type CondoItem } from "@/lib/auth";
 import type { Purchase } from "@/components/PurchaseCard";
+
+type PendingRefundItem = {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    apartment: string;
+    email: string;
+  };
+  purchaseId: {
+    _id: string;
+    product: string;
+    unitPrice: number;
+  };
+  amount: number;
+  paymentStatus: string;
+  userPixKey?: string;
+  receiptDetails?: string;
+  updatedAt: string;
+};
 
 // Super Admin & Syndic Management Dashboard - CondomínioBuy Multi-Tenant
 export const Route = createFileRoute("/admin")({
@@ -72,31 +103,37 @@ function AdminPage() {
             <p className="text-sm text-slate-300">
               {superAdmin
                 ? "Gerencie condomínios, síndicos e usuários de toda a plataforma."
-                : "Gerencie a aprovação de moradores e compras do seu condomínio."}
+                : "Gerencie aprovação de moradores, compras e devoluções do condomínio."}
             </p>
           </div>
         </div>
       </div>
 
-      <Tabs defaultValue={superAdmin ? "condos" : "users"} className="space-y-6">
-        <TabsList className="h-13 rounded-2xl bg-slate-900/80 border border-white/10 p-1.5 backdrop-blur-md">
+      <Tabs defaultValue={superAdmin ? "condos" : "refunds"} className="space-y-6">
+        <TabsList className="h-13 flex-wrap rounded-2xl bg-slate-900/80 border border-white/10 p-1.5 backdrop-blur-md">
           {superAdmin && (
             <TabsTrigger
               value="condos"
-              className="rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
+              className="rounded-xl px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
             >
-              <Building2 className="h-4 w-4" /> Gestão de Condomínios
+              <Building2 className="h-4 w-4" /> Condomínios
             </TabsTrigger>
           )}
           <TabsTrigger
-            value="users"
-            className="rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
+            value="refunds"
+            className="rounded-xl px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-orange-500/20 data-[state=active]:text-orange-300 data-[state=active]:border data-[state=active]:border-orange-500/40 transition-all flex items-center gap-2"
           >
-            <Users className="h-4 w-4" /> {superAdmin ? "Todos os Usuários" : "Moradores do Condomínio"}
+            <RefreshCw className="h-4 w-4" /> Reembolsos Pendentes
+          </TabsTrigger>
+          <TabsTrigger
+            value="users"
+            className="rounded-xl px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
+          >
+            <Users className="h-4 w-4" /> {superAdmin ? "Todos os Usuários" : "Moradores"}
           </TabsTrigger>
           <TabsTrigger
             value="purchases"
-            className="rounded-xl px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
+            className="rounded-xl px-5 py-2 text-xs font-bold uppercase tracking-wider text-slate-400 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-300 data-[state=active]:border data-[state=active]:border-emerald-500/40 transition-all flex items-center gap-2"
           >
             <ShoppingBag className="h-4 w-4" /> Gestão de Compras
           </TabsTrigger>
@@ -108,6 +145,10 @@ function AdminPage() {
           </TabsContent>
         )}
 
+        <TabsContent value="refunds">
+          <RefundsTab />
+        </TabsContent>
+
         <TabsContent value="users">
           <UsersTab superAdmin={superAdmin} />
         </TabsContent>
@@ -116,6 +157,151 @@ function AdminPage() {
           <PurchasesTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+/* Tab to manage Pending Refunds for Syndic */
+function RefundsTab() {
+  const qc = useQueryClient();
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: ["admin", "refunds"],
+    queryFn: async () => (await api.get<PendingRefundItem[]>("/participations/refunds")).data,
+  });
+
+  const confirmRefund = async (partId: string) => {
+    setBusyId(partId);
+    try {
+      await api.patch(`/participations/${partId}/refund`);
+      toast.success("Reembolso marcado como concluído com sucesso!");
+      qc.invalidateQueries({ queryKey: ["admin", "refunds"] });
+      qc.invalidateQueries({ queryKey: ["admin", "purchases"] });
+      qc.invalidateQueries({ queryKey: ["purchases", "active"] });
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Não foi possível confirmar o reembolso."));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const copyPix = (pixKey?: string, partId?: string) => {
+    if (!pixKey || !partId) return;
+    navigator.clipboard.writeText(pixKey);
+    setCopiedId(partId);
+    toast.success("Chave PIX copiada!");
+    setTimeout(() => setCopiedId(null), 2500);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="rounded-3xl glass-panel p-8 text-center text-slate-400">
+        Carregando reembolsos pendentes...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-6 text-sm text-rose-300">
+        {apiErrorMessage(error, "Não foi possível carregar a lista de reembolsos.")}
+      </div>
+    );
+  }
+
+  const refunds = data ?? [];
+
+  return (
+    <div className="space-y-6">
+      {/* Header alert card */}
+      <div className="rounded-3xl border border-orange-500/30 bg-orange-500/10 p-6 backdrop-blur-md">
+        <div className="flex items-center gap-3 text-orange-300 font-bold">
+          <RefreshCw className="h-6 w-6 text-orange-400 shrink-0" />
+          <div>
+            <h3 className="text-base font-extrabold text-white">Gestão de Devoluções de PIX</h3>
+            <p className="text-xs text-orange-300/80 font-normal">
+              Compras canceladas ou expiradas sem atingir a meta geram reembolsos pendentes aos moradores. Copie a chave PIX do morador, realize a transferência pelo seu app bancário e clique em "Confirmar Reembolso".
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Refunds Table */}
+      <div className="overflow-hidden rounded-3xl glass-panel border border-white/10">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-900/90 border-b border-white/10">
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400 py-4">Morador / Apto</TableHead>
+                <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Produto</TableHead>
+                <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Valor a Reembolsar</TableHead>
+                <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400">Chave PIX do Morador</TableHead>
+                <TableHead className="text-xs uppercase font-extrabold tracking-wider text-slate-400 text-right pr-6">Ação do Síndico</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {refunds.map((r) => {
+                const totalRefund = r.amount * (r.purchaseId?.unitPrice || 0);
+                const pix = r.userPixKey?.trim();
+                return (
+                  <TableRow key={r._id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="font-bold text-white py-4">
+                      <div>
+                        {r.userId?.name ?? "Morador"}
+                        <span className="block text-xs font-semibold text-slate-400">
+                          Apto {r.userId?.apartment ?? "-"} • {r.userId?.email}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-slate-200 font-semibold">{r.purchaseId?.product ?? "Compra"}</TableCell>
+                    <TableCell className="font-extrabold text-emerald-400 text-base">
+                      {formatBRL(totalRefund)}
+                    </TableCell>
+                    <TableCell>
+                      {pix ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs text-white bg-slate-950 border border-white/10 px-2.5 py-1 rounded-lg select-all">
+                            {pix}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => copyPix(pix, r._id)}
+                            className="h-8 px-2 rounded-lg text-xs font-bold text-slate-300 hover:text-white hover:bg-white/10"
+                          >
+                            {copiedId === r._id ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500 italic">Não informada pelo morador</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right pr-6">
+                      <Button
+                        size="sm"
+                        disabled={busyId === r._id}
+                        onClick={() => confirmRefund(r._id)}
+                        className="rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-300 hover:bg-orange-500/30 text-xs font-bold"
+                      >
+                        {busyId === r._id ? "Confirmando..." : "Confirmar Reembolso"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {refunds.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-12 text-center text-slate-400">
+                    Nenhum reembolso pendente no momento. Todos os valores foram regularizados!
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -351,12 +537,13 @@ function PurchasesTab() {
   });
 
   const cancel = async (id: string) => {
-    if (!window.confirm("Deseja realmente cancelar esta compra coletiva? O registro será mantido com status cancelado.")) return;
+    if (!window.confirm("Deseja realmente cancelar esta compra coletiva? Participações confirmadas serão movidas para Reembolso Pendente.")) return;
     setPending(id);
     try {
       await api.patch(`/purchases/${id}/cancel`);
-      toast.success("Compra cancelada.");
+      toast.success("Compra cancelada e movida para Reembolso Pendente.");
       qc.invalidateQueries({ queryKey: ["admin", "purchases"] });
+      qc.invalidateQueries({ queryKey: ["admin", "refunds"] });
       qc.invalidateQueries({ queryKey: ["purchases", "active"] });
     } catch (err) {
       toast.error(apiErrorMessage(err, "Não foi possível cancelar a compra."));
@@ -411,7 +598,7 @@ function PurchasesTab() {
                     variant="destructive"
                     size="sm"
                     className="rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 hover:bg-rose-500/30 text-xs font-semibold"
-                    disabled={pending === p._id || p.status === "cancelled"}
+                    disabled={pending === p._id || p.status === "CANCELLED" || p.status === "cancelled"}
                     onClick={() => cancel(p._id)}
                   >
                     {pending === p._id ? "..." : "Cancelar Compra"}
